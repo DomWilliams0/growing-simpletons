@@ -1,0 +1,8 @@
+[package]
+name = "shapes"
+version = "0.1.0"
+authors = ["Dom Williams <me@domwillia.ms>"]
+
+[dependencies]
+nphysics3d = "0.6"
+nalgebra = "0.14.4"
