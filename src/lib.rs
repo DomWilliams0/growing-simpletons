@@ -1,10 +1,12 @@
 #![allow(dead_code)]
 
 extern crate nalgebra;
+extern crate ncollide3d;
 extern crate nphysics3d;
 extern crate petgraph;
 
 mod body;
+mod physics;
 mod tree;
 
 use nalgebra::Vector3;

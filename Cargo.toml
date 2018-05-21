@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Dom Williams <me@domwillia.ms>"]
 
 [dependencies]
-nphysics3d = "0.6"
+nphysics3d = "0.8"
 nalgebra = "0.14.4"
 petgraph = "0.4.12"
+ncollide3d = "0.15.3"
