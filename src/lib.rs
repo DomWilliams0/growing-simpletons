@@ -6,7 +6,7 @@ extern crate nphysics3d;
 extern crate petgraph;
 
 mod body;
-mod physics;
+pub mod physics;
 mod tree;
 
 use nalgebra::Vector3;

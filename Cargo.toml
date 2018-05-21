@@ -3,8 +3,20 @@ name = "shapes"
 version = "0.1.0"
 authors = ["Dom Williams <me@domwillia.ms>"]
 
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "renderer"
+path = "renderer/src/main.rs"
+
 [dependencies]
 nphysics3d = "0.8"
 nalgebra = "0.14.4"
 petgraph = "0.4.12"
 ncollide3d = "0.15.3"
+
+[workspace]
+members = [
+	"renderer"
+]
