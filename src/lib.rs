@@ -5,6 +5,9 @@ extern crate ncollide3d;
 extern crate nphysics3d;
 extern crate petgraph;
 
+#[macro_use]
+extern crate lazy_static;
+
 mod body;
 pub mod physics;
 mod tree;

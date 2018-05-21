@@ -7,3 +7,4 @@ authors = ["Dom Williams <me@domwillia.ms>"]
 shapes = { path = "../" }
 kiss3d = "0.14.0"
 nalgebra = "0.14.4"
+nphysics3d = "0.8"
