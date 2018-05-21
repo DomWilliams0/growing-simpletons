@@ -6,3 +6,4 @@ authors = ["Dom Williams <me@domwillia.ms>"]
 [dependencies]
 nphysics3d = "0.6"
 nalgebra = "0.14.4"
+petgraph = "0.4.12"
