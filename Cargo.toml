@@ -8,7 +8,7 @@ path = "src/lib.rs"
 
 [[bin]]
 name = "renderer"
-path = "renderer/src/main.rs"
+path = "src/renderer.rs"
 
 [dependencies]
 nphysics3d = "0.8"
@@ -16,8 +16,4 @@ nalgebra = "0.14"
 petgraph = "0.4"
 ncollide3d = "0.15"
 lazy_static = "1.0.0"
-
-[workspace]
-members = [
-	"renderer"
-]
+kiss3d = "0.14.0"
