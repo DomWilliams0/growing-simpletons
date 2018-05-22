@@ -22,7 +22,7 @@ type Edge = i32; // unused?
 type GraphSize = petgraph::graph::DefaultIx;
 type Tree = petgraph::Graph<Node, Edge, petgraph::Directed, GraphSize>;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct BodyTree {
     tree: Tree,
     root: Option<NodeIndex>,
@@ -31,11 +31,10 @@ pub struct BodyTree {
 impl BodyTree {
     // TODO use results instead of panics
 
-    pub fn new() -> Self {
-        Self {
-            tree: Tree::new(),
-            root: None,
-        }
+    pub fn with_root(root: Node) -> Self {
+        let mut tree = Self::default();
+        tree.set_root(root);
+        tree
     }
 
     pub fn set_root(&mut self, node: Node) -> NodeIndex {
@@ -46,6 +45,11 @@ impl BodyTree {
         let root = self.tree.add_node(node);
         self.root = Some(root);
         root
+    }
+
+    /// Panics if invalid
+    pub fn root(&self) -> NodeIndex {
+        self.root.unwrap()
     }
 
     pub fn add_child(&mut self, parent: NodeIndex, child: Node) -> NodeIndex {
@@ -162,8 +166,8 @@ mod tests {
 
     #[test]
     fn realiser() {
-        let mut tree = BodyTree::new();
-        let parent = tree.set_root(joint());
+        let mut tree = BodyTree::with_root(joint());
+        let parent = tree.root();
         tree.add_child(parent, shape());
         let parent = tree.add_child(parent, joint());
         tree.add_child(parent, shape());
@@ -176,15 +180,14 @@ mod tests {
 
     #[test]
     fn valid_tree() {
-        let tree = BodyTree::new();
+        let tree = BodyTree::default();
         assert!(!tree.is_valid());
 
-        let mut tree = BodyTree::new();
-        tree.set_root(shape());
+        let tree = BodyTree::with_root(shape());
         assert!(tree.is_valid());
 
-        let mut tree = BodyTree::new();
-        let parent = tree.set_root(joint());
+        let mut tree = BodyTree::with_root(joint());
+        let parent = tree.root();
         assert!(!tree.is_valid());
 
         tree.add_child(parent, shape());
@@ -197,7 +200,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn one_root() {
-        let mut tree = BodyTree::new();
+        let mut tree = BodyTree::default();
         tree.set_root(shape());
         tree.set_root(shape());
     }
@@ -205,16 +208,16 @@ mod tests {
     #[test]
     #[should_panic]
     fn no_children_for_terminals() {
-        let mut tree = BodyTree::new();
-        let parent = tree.set_root(shape());
-        tree.add_child(parent, shape());
+        let mut tree = BodyTree::with_root(shape());
+        let root = tree.root();
+        tree.add_child(root, shape());
     }
 
     #[test]
     #[should_panic]
     fn full_joint() {
-        let mut tree = BodyTree::new();
-        let parent = tree.set_root(joint());
+        let mut tree = BodyTree::with_root(joint());
+        let parent = tree.root();
         tree.add_child(parent, shape());
         tree.add_child(parent, shape());
         tree.add_child(parent, shape());

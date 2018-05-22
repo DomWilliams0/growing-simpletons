@@ -9,10 +9,23 @@ use Coord;
 
 const COLLIDER_MARGIN: f32 = 0.01;
 
-lazy_static! {
-    static ref COLOUR_GROUND: Point3<Coord> = Point3::new(0.1, 0.1, 0.1);
-    static ref COLOUR_DEFAULT: Point3<Coord> = Point3::new(0.6, 0.8, 0.2);
+#[derive(Copy, Clone)]
+pub struct Colour {
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
 }
+
+const COLOUR_GROUND: Colour = Colour {
+    r: 0.1,
+    g: 0.1,
+    b: 0.1,
+};
+const COLOUR_DEFAULT: Colour = Colour {
+    r: 0.6,
+    g: 0.8,
+    b: 0.2,
+};
 
 pub enum ObjectShape {
     Cuboid(Vector3<Coord>),
@@ -21,7 +34,7 @@ pub enum ObjectShape {
 
 pub struct WorldObject {
     pub shape: ObjectShape,
-    pub colour: Point3<Coord>,
+    pub colour: Colour,
 }
 
 pub struct World {
@@ -30,13 +43,13 @@ pub struct World {
 }
 
 impl WorldObject {
-    fn new(shape: ObjectShape, colour: Point3<Coord>) -> Self {
+    fn new(shape: ObjectShape, colour: Colour) -> Self {
         Self { shape, colour }
     }
 }
 
-impl World {
-    pub fn new() -> Self {
+impl Default for World {
+    fn default() -> Self {
         let mut world = world::World::new();
         world.set_gravity(Vector3::new(0.0, -9.81, 0.0));
         let material = object::Material::default();
@@ -56,16 +69,18 @@ impl World {
 
         let ground_obj = WorldObject::new(
             ObjectShape::Plane(Point3::new(0.0, 0.0, 0.0), Vector3::y(), ground_size),
-            COLOUR_GROUND.clone(),
+            COLOUR_GROUND,
         );
         let objects = vec![(ground, ground_obj)];
 
         Self {
             physics: world,
-            objects: objects,
+            objects,
         }
     }
+}
 
+impl World {
     fn add_body(&mut self, pos: Vector3<Coord>, object: WorldObject) -> object::BodyHandle {
         let shape = match object.shape {
             ObjectShape::Cuboid(dims) => ShapeHandle::new(Cuboid::new(dims)),
@@ -92,11 +107,11 @@ impl World {
         let dims = Vector3::new(2.0, 1.0, 0.5);
         self.add_body(
             Vector3::new(0.0, 2.0, 0.0),
-            WorldObject::new(ObjectShape::Cuboid(dims), COLOUR_DEFAULT.clone()),
+            WorldObject::new(ObjectShape::Cuboid(dims), COLOUR_DEFAULT),
         );
         self.add_body(
             Vector3::new(0.2, 4.0, 1.0),
-            WorldObject::new(ObjectShape::Cuboid(dims), COLOUR_DEFAULT.clone()),
+            WorldObject::new(ObjectShape::Cuboid(dims), COLOUR_DEFAULT),
         );
     }
 
@@ -151,10 +166,7 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
 
     fn new_shape(&mut self, shape: &body::Cuboid) -> Self::RealisedHandle {
         let pos = Vector3::new(0.0, 3.0, 0.0); // TODO calculate?
-        let obj = WorldObject::new(
-            ObjectShape::Cuboid(shape.dims.into()),
-            COLOUR_DEFAULT.clone(),
-        );
+        let obj = WorldObject::new(ObjectShape::Cuboid(shape.dims.into()), COLOUR_DEFAULT);
         self.world.add_body(pos, obj)
     }
 

@@ -31,10 +31,10 @@ fn new_node(window: &mut window::Window, object: &physics::ObjectShape) -> scene
 
 fn main() {
     let mut window = window::Window::new("Shapes renderer");
-    let mut world = physics::World::new();
+    let mut world = physics::World::default();
 
     let tree = {
-        let mut t = tree::BodyTree::new();
+        let mut t = tree::BodyTree::default();
         t.set_root(tree::Node::Shape(body::Cuboid::new(body::Dims::new(
             1.0, 3.0, 0.1,
         ))));
@@ -69,9 +69,9 @@ fn main() {
             let color = obj.colour;
             if active {
                 node.set_local_transformation(*collider.position());
-                node.set_color(color.x, color.y, color.z);
+                node.set_color(color.r, color.g, color.b);
             } else {
-                node.set_color(color.x * 0.25, color.y * 0.25, color.z * 0.25);
+                node.set_color(color.r * 0.25, color.g * 0.25, color.b * 0.25);
             }
         }
     }
