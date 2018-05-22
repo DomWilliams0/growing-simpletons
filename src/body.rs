@@ -7,34 +7,39 @@ pub struct Dims {
     pub z: Coord,
 }
 
-trait Shape {
-    // cuboid: (face, x, y)
-    // sphere (TODO spherical coordinates)
-    fn get_local_point(&self, cp: &ConnectPoint) -> Pos;
-}
-
 #[derive(Debug)]
-pub struct Cuboid {
-    pub dims: Dims,
+pub enum Shape {
+    Cuboid(Dims),
 }
 
 // struct Sphere {
 //     radius: Coord,
 // }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Copy, Clone)]
 struct ConnectPoint(Coord, Coord, Coord);
 
 // TODO other joint types with controllable inputs
-#[derive(Debug, Default)]
+#[derive(Debug, Copy, Clone)]
 pub struct Joint {
     src_connect: ConnectPoint,
     dst_connect: ConnectPoint,
+    pub joint_type: JointType,
 }
 
-impl Cuboid {
-    pub fn new(dims: Dims) -> Self {
-        Self { dims }
+#[derive(Debug, Copy, Clone)]
+pub enum JointType {
+    Ground,
+    Fixed,
+}
+
+impl Joint {
+    pub fn new(joint_type: JointType) -> Self {
+        Self {
+            src_connect: Default::default(),
+            dst_connect: Default::default(),
+            joint_type,
+        }
     }
 }
 

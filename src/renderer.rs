@@ -34,10 +34,13 @@ fn main() {
     let mut world = physics::World::default();
 
     let tree = {
-        let mut t = tree::BodyTree::default();
-        t.set_root(tree::Node::Shape(body::Cuboid::new(body::Dims::new(
-            1.0, 3.0, 0.1,
-        ))));
+        let mut t = tree::BodyTree::with_root(body::Shape::Cuboid(body::Dims::new(1.0, 3.0, 0.1)));
+        let root = t.root();
+        t.add_child(
+            root,
+            body::Shape::Cuboid(body::Dims::new(5.0, 1.0, 1.0)),
+            body::Joint::new(body::JointType::Fixed),
+        );
         t
     };
 

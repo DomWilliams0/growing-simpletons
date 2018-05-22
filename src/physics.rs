@@ -1,7 +1,7 @@
-use nalgebra::{zero, Isometry3, Point3, Vector3};
+use nalgebra::{zero, Isometry3, Point3, UnitQuaternion, Vector3};
 use ncollide3d::shape::{Cuboid, ShapeHandle};
 use nphysics3d::volumetric::Volumetric;
-use nphysics3d::{object, world};
+use nphysics3d::{joint, object, world};
 
 use body;
 use tree::TreeRealiser;
@@ -81,38 +81,14 @@ impl Default for World {
 }
 
 impl World {
-    fn add_body(&mut self, pos: Vector3<Coord>, object: WorldObject) -> object::BodyHandle {
-        let shape = match object.shape {
-            ObjectShape::Cuboid(dims) => ShapeHandle::new(Cuboid::new(dims)),
-            _ => unimplemented!(),
-        };
-        let inertia = shape.inertia(1.0);
-        let com = shape.center_of_mass();
-        let pos = Isometry3::new(pos, zero());
-
-        let handle = self.physics.add_rigid_body(pos, inertia, com);
-        let collider = self.physics.add_collider(
-            COLLIDER_MARGIN,
-            shape,
-            handle,
-            Isometry3::identity(),
-            object::Material::default(),
-        );
-
+    fn register_object(
+        &mut self,
+        collider: object::ColliderHandle,
+        shape: &body::Shape,
+        colour: Colour,
+    ) {
+        let object = WorldObject::new(ObjectShape::from_body_shape(shape), colour);
         self.objects.push((collider, object));
-        handle
-    }
-
-    pub fn add_test_bodies(&mut self) {
-        let dims = Vector3::new(2.0, 1.0, 0.5);
-        self.add_body(
-            Vector3::new(0.0, 2.0, 0.0),
-            WorldObject::new(ObjectShape::Cuboid(dims), COLOUR_DEFAULT),
-        );
-        self.add_body(
-            Vector3::new(0.2, 4.0, 1.0),
-            WorldObject::new(ObjectShape::Cuboid(dims), COLOUR_DEFAULT),
-        );
     }
 
     pub fn objects(
@@ -164,18 +140,85 @@ impl<'w> PhysicalRealiser<'w> {
 impl<'w> TreeRealiser for PhysicalRealiser<'w> {
     type RealisedHandle = object::BodyHandle;
 
+    /*
     fn new_shape(&mut self, shape: &body::Cuboid) -> Self::RealisedHandle {
         let pos = Vector3::new(0.0, 3.0, 0.0); // TODO calculate?
         let obj = WorldObject::new(ObjectShape::Cuboid(shape.dims.into()), COLOUR_DEFAULT);
         self.world.add_body(pos, obj)
     }
+    */
 
-    fn new_joint(
+    fn new_shape(
         &mut self,
-        shape: &body::Joint,
-        children: &[Self::RealisedHandle],
+        shape: &body::Shape,
+        parent: Self::RealisedHandle,
+        parent_joint: &body::Joint,
     ) -> Self::RealisedHandle {
-        unimplemented!();
+        // helper
+        fn add_link<J: joint::Joint<Coord>>(
+            world: &mut World,
+            parent: object::BodyHandle,
+            joint: J,
+            shape: &ShapeHandle<Coord>,
+        ) -> object::BodyHandle {
+            let inertia = shape.inertia(1.0);
+            let com = shape.center_of_mass();
+            world
+                .physics
+                .add_multibody_link(parent, joint, zero(), zero(), inertia, com)
+        }
+
+        let body_shape = match shape {
+            body::Shape::Cuboid(dims) => ShapeHandle::new(Cuboid::new((*dims).into())),
+        };
+
+        let pos = Vector3::new(0.0, 10.0, 0.0); // TODO position?
+        let relative = {
+            let q = UnitQuaternion::new(Vector3::new(0.0, -1.5, 0.5));
+            let mut i = Isometry3::new(Vector3::new(0.0, 2.0, 0.5), zero());
+            i.append_rotation_mut(&q);
+            i
+        };
+        let link = match parent_joint.joint_type {
+            body::JointType::Ground => add_link(
+                self.world,
+                parent,
+                joint::FreeJoint::new(Isometry3::new(pos, zero())),
+                &body_shape,
+            ),
+            body::JointType::Fixed => add_link(
+                self.world,
+                parent,
+                joint::FixedJoint::new(relative),
+                &body_shape,
+            ),
+        };
+
+        let collider = self.world.physics.add_collider(
+            COLLIDER_MARGIN,
+            body_shape,
+            link,
+            Isometry3::identity(),
+            object::Material::default(),
+        );
+
+        self.world.register_object(collider, shape, COLOUR_DEFAULT);
+        link
+    }
+
+    fn root(&self) -> (Self::RealisedHandle, body::Joint) {
+        (
+            object::BodyHandle::ground(),
+            body::Joint::new(body::JointType::Ground),
+        )
+    }
+}
+
+impl ObjectShape {
+    fn from_body_shape(from: &body::Shape) -> Self {
+        match from {
+            body::Shape::Cuboid(dims) => ObjectShape::Cuboid((*dims).into()),
+        }
     }
 }
 
