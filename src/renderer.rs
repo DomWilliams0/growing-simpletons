@@ -8,7 +8,7 @@ use nalgebra::{Point3, Vector3};
 use nphysics3d::object::ColliderHandle;
 use std::collections::HashMap;
 
-use shapes::physics;
+use shapes::{body, physics, tree};
 
 // TODO tidy this up with a struct
 fn new_node(window: &mut window::Window, object: &physics::ObjectShape) -> scene::SceneNode {
@@ -32,7 +32,19 @@ fn new_node(window: &mut window::Window, object: &physics::ObjectShape) -> scene
 fn main() {
     let mut window = window::Window::new("Shapes renderer");
     let mut world = physics::World::new();
-    world.add_test_bodies();
+
+    let tree = {
+        let mut t = tree::BodyTree::new();
+        t.set_root(tree::Node::Shape(body::Cuboid::new(body::Dims::new(
+            1.0, 3.0, 0.1,
+        ))));
+        t
+    };
+
+    {
+        let mut r = physics::PhysicalRealiser::new(&mut world);
+        tree.recurse(&mut r);
+    }
 
     // add objects from physics world to renderer
     let mut objects = HashMap::<ColliderHandle, scene::SceneNode>::new();

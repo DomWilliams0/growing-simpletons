@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Dims {
     pub x: Coord,
     pub y: Coord,
@@ -15,7 +15,7 @@ trait Shape {
 
 #[derive(Debug)]
 pub struct Cuboid {
-    dims: Dims,
+    pub dims: Dims,
 }
 
 // struct Sphere {

@@ -3,6 +3,8 @@ use ncollide3d::shape::{Cuboid, ShapeHandle};
 use nphysics3d::volumetric::Volumetric;
 use nphysics3d::{object, world};
 
+use body;
+use tree::TreeRealiser;
 use Coord;
 
 const COLLIDER_MARGIN: f32 = 0.01;
@@ -131,5 +133,42 @@ impl World {
 
     pub fn tick(&mut self) {
         self.physics.step();
+    }
+}
+
+pub struct PhysicalRealiser<'w> {
+    world: &'w mut World,
+}
+
+impl<'w> PhysicalRealiser<'w> {
+    pub fn new(world: &'w mut World) -> Self {
+        Self { world }
+    }
+}
+
+impl<'w> TreeRealiser for PhysicalRealiser<'w> {
+    type RealisedHandle = object::BodyHandle;
+
+    fn new_shape(&mut self, shape: &body::Cuboid) -> Self::RealisedHandle {
+        let pos = Vector3::new(0.0, 3.0, 0.0); // TODO calculate?
+        let obj = WorldObject::new(
+            ObjectShape::Cuboid(shape.dims.into()),
+            COLOUR_DEFAULT.clone(),
+        );
+        self.world.add_body(pos, obj)
+    }
+
+    fn new_joint(
+        &mut self,
+        shape: &body::Joint,
+        children: &[Self::RealisedHandle],
+    ) -> Self::RealisedHandle {
+        unimplemented!();
+    }
+}
+
+impl Into<Vector3<Coord>> for body::Dims {
+    fn into(self) -> Vector3<Coord> {
+        Vector3::new(self.x, self.y, self.z)
     }
 }

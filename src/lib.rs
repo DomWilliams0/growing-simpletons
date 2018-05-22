@@ -8,9 +8,9 @@ extern crate petgraph;
 #[macro_use]
 extern crate lazy_static;
 
-mod body;
+pub mod body;
 pub mod physics;
-mod tree;
+pub mod tree;
 
 use nalgebra::Vector3;
 
