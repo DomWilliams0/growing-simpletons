@@ -16,8 +16,6 @@ pub struct BodyTree {
 }
 
 impl BodyTree {
-    // TODO use results instead of panics
-
     pub fn with_root(root_node: Node) -> Self {
         let mut tree = Tree::new();
         let root = tree.add_node(root_node);
@@ -86,49 +84,48 @@ pub trait TreeRealiser {
     fn root(&self) -> (Self::RealisedHandle, body::Joint);
 }
 
-#[derive(Default)]
-struct DebugRealiser {
-    last_node: i64,
-    root: String,
-}
-
-/*
-impl TreeRealiser for DebugRealiser {
-    type RealisedHandle = String;
-
-    fn new_shape(&mut self, _shape: &body::Cuboid) -> Self::RealisedHandle {
-        let id = {
-            self.last_node += 1;
-            self.last_node
-        };
-        format!("Shape{}", id)
-    }
-
-    fn new_joint(
-        &mut self,
-        src: &Self::RealisedHandle,
-        dst: &Self::RealisedHandle,
-        _joint: &body::Joint,
-    ) -> Self::RealisedHandle {
-        let s = format!("Joint({} => {})", src, dst);
-        self.root = s.clone();
-        s
-    }
-
-    fn root(&self) -> (Self::RealisedHandle, body::Joint) { (String::from("ROOT"), body::Joint::default()) }
-}
-*/
-
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
-    fn shape() -> Node {
-        body::Cuboid::new(body::Dims::new(5.0, 5.0, 5.0))
+    struct DebugRealiser {
+        last_node: i64,
+        expected_order: Vec<(i64, i64)>,
     }
+
+    impl TreeRealiser for DebugRealiser {
+        type RealisedHandle = i64;
+
+        fn new_shape(
+            &mut self,
+            _shape: &body::Shape,
+            parent: Self::RealisedHandle,
+            _parent_joint: &body::Joint,
+        ) -> Self::RealisedHandle {
+            let id = {
+                self.last_node += 1;
+                self.last_node
+            };
+
+            assert!(!self.expected_order.is_empty());
+            let (expected_id, expected_parent) = self.expected_order.remove(0);
+
+            assert_eq!(id, expected_id);
+            assert_eq!(parent, expected_parent);
+            id
+        }
+
+        fn root(&self) -> (Self::RealisedHandle, body::Joint) {
+            (0, body::Joint::new(body::JointType::Fixed))
+        }
+    }
+
+    fn shape() -> Node {
+        body::Shape::Cuboid(body::Dims::new(5.0, 5.0, 5.0))
+    }
+
     fn joint() -> Edge {
-        body::Joint::default()
+        body::Joint::new(body::JointType::Fixed)
     }
 
     #[test]
@@ -139,56 +136,10 @@ mod tests {
         tree.add_child(parent, shape(), joint());
         tree.add_child(parent, shape(), joint());
 
-        let mut r = DebugRealiser::default();
+        let mut r = DebugRealiser {
+            last_node: 0,
+            expected_order: vec![(1, 0), (2, 1), (3, 2), (4, 2)],
+        };
         tree.recurse(&mut r);
-        println!("{}", r.root);
-        //assert_eq!(&r.root, "Joint(Joint(Shape1;Shape2);Shape3)");
     }
-
-    /*
-    #[test]
-    fn valid_tree() {
-        let tree = BodyTree::default();
-        assert!(!tree.is_valid());
-
-        let tree = BodyTree::with_root(shape());
-        assert!(tree.is_valid());
-
-        let mut tree = BodyTree::with_root(joint());
-        let parent = tree.root();
-        assert!(!tree.is_valid());
-
-        tree.add_child(parent, shape());
-        assert!(!tree.is_valid());
-
-        tree.add_child(parent, shape());
-        assert!(tree.is_valid());
-    }
-
-    #[test]
-    #[should_panic]
-    fn one_root() {
-        let mut tree = BodyTree::default();
-        tree.set_root(shape());
-        tree.set_root(shape());
-    }
-
-    #[test]
-    #[should_panic]
-    fn no_children_for_terminals() {
-        let mut tree = BodyTree::with_root(shape());
-        let root = tree.root();
-        tree.add_child(root, shape());
-    }
-
-    #[test]
-    #[should_panic]
-    fn full_joint() {
-        let mut tree = BodyTree::with_root(joint());
-        let parent = tree.root();
-        tree.add_child(parent, shape());
-        tree.add_child(parent, shape());
-        tree.add_child(parent, shape());
-    }
-    */
 }
