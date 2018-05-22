@@ -1,10 +1,10 @@
 use petgraph;
-use petgraph::graph::NodeIndex;
+pub use petgraph::graph::NodeIndex;
 
 use body;
 
 #[derive(Debug)]
-enum Node {
+pub enum Node {
     Joint(body::Joint),
     Shape(body::Cuboid),
 }
@@ -23,7 +23,7 @@ type GraphSize = petgraph::graph::DefaultIx;
 type Tree = petgraph::Graph<Node, Edge, petgraph::Directed, GraphSize>;
 
 #[derive(Debug)]
-struct BodyTree {
+pub struct BodyTree {
     tree: Tree,
     root: Option<NodeIndex>,
 }
@@ -31,14 +31,14 @@ struct BodyTree {
 impl BodyTree {
     // TODO use results instead of panics
 
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             tree: Tree::new(),
             root: None,
         }
     }
 
-    fn set_root(&mut self, node: Node) -> NodeIndex {
+    pub fn set_root(&mut self, node: Node) -> NodeIndex {
         if self.tree.node_count() != 0 {
             panic!("Cannot set root of non-empty tree!")
         }
@@ -48,7 +48,7 @@ impl BodyTree {
         root
     }
 
-    fn add_child(&mut self, parent: NodeIndex, child: Node) -> NodeIndex {
+    pub fn add_child(&mut self, parent: NodeIndex, child: Node) -> NodeIndex {
         if self.children_count(parent) + 1 > self.tree[parent].arity() {
             panic!("Parent is full");
         }
@@ -62,12 +62,12 @@ impl BodyTree {
         self.get_children(parent).count()
     }
 
-    fn get_children(&self, parent: NodeIndex) -> petgraph::graph::Neighbors<Edge> {
+    pub fn get_children(&self, parent: NodeIndex) -> petgraph::graph::Neighbors<Edge> {
         self.tree
             .neighbors_directed(parent, petgraph::Direction::Incoming)
     }
 
-    fn is_valid(&self) -> bool {
+    pub fn is_valid(&self) -> bool {
         match self.root {
             None => false,
             Some(root) => {
@@ -81,6 +81,71 @@ impl BodyTree {
             }
         }
     }
+
+    // TODO trait for producing them
+    // has item for bodyhandle
+    //      physics body handle for this, or can be node int for rendering
+    fn actually_recurse<R: TreeRealiser>(
+        &self,
+        current: NodeIndex,
+        realiser: &mut R,
+    ) -> R::RealisedHandle {
+        let node = &self.tree[current];
+        match node {
+            Node::Shape(cuboid) => realiser.new_shape(cuboid),
+
+            Node::Joint(joint) => {
+                let children: Vec<R::RealisedHandle> = self.get_children(current)
+                    .map(|child| self.actually_recurse(child, realiser))
+                    .collect();
+                realiser.new_joint(joint, &children)
+            }
+        }
+    }
+
+    pub fn recurse<R: TreeRealiser>(&self, realiser: &mut R) {
+        assert!(self.is_valid());
+        self.actually_recurse(self.root.unwrap(), realiser);
+    }
+}
+
+pub trait TreeRealiser {
+    type RealisedHandle;
+
+    fn new_shape(&mut self, shape: &body::Cuboid) -> Self::RealisedHandle;
+    fn new_joint(
+        &mut self,
+        shape: &body::Joint,
+        children: &[Self::RealisedHandle],
+    ) -> Self::RealisedHandle;
+}
+
+#[derive(Default)]
+struct DebugRealiser {
+    last_node: i64,
+    root: String,
+}
+
+impl TreeRealiser for DebugRealiser {
+    type RealisedHandle = String;
+
+    fn new_shape(&mut self, shape: &body::Cuboid) -> Self::RealisedHandle {
+        let id = {
+            self.last_node += 1;
+            self.last_node
+        };
+        format!("Shape{}", id)
+    }
+
+    fn new_joint(
+        &mut self,
+        shape: &body::Joint,
+        children: &[Self::RealisedHandle],
+    ) -> Self::RealisedHandle {
+        let s = format!("Joint({})", children.join(";"));
+        self.root = s.clone();
+        s
+    }
 }
 
 #[cfg(test)]
@@ -93,6 +158,20 @@ mod tests {
     }
     fn joint() -> Node {
         Node::Joint(body::Joint::default())
+    }
+
+    #[test]
+    fn realiser() {
+        let mut tree = BodyTree::new();
+        let parent = tree.set_root(joint());
+        tree.add_child(parent, shape());
+        let parent = tree.add_child(parent, joint());
+        tree.add_child(parent, shape());
+        tree.add_child(parent, shape());
+
+        let mut r = DebugRealiser::default();
+        tree.recurse(&mut r);
+        assert_eq!(&r.root, "Joint(Joint(Shape1;Shape2);Shape3)");
     }
 
     #[test]
