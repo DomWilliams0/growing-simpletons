@@ -117,11 +117,15 @@ impl World {
 
 pub struct PhysicalRealiser<'w> {
     world: &'w mut World,
+    pub next_spawn_pos: Vector3<Coord>,
 }
 
 impl<'w> PhysicalRealiser<'w> {
     pub fn new(world: &'w mut World) -> Self {
-        Self { world }
+        Self {
+            world,
+            next_spawn_pos: Vector3::new(0.0, 5.0, 0.0),
+        }
     }
 }
 
@@ -152,7 +156,7 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
         let parent_pos = {
             match self.world.physics.multibody_link(parent) {
                 Some(link) => link.position(),
-                None => Isometry3::new(Vector3::new(0.0, 10.0, 0.0), zero()), // spawn position of full entity
+                None => Isometry3::new(self.next_spawn_pos, zero()), // spawn position of full entity
             }
         };
 

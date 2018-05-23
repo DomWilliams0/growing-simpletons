@@ -39,15 +39,17 @@ fn main() {
         serialise::load(path)
     };
 
-    assert!(population.len() == 1, "Only single trees allowed for now");
-    let tree = &population[0];
-
     let mut window = window::Window::new("Shapes renderer");
     let mut world = physics::World::default();
 
     {
+        let padding = 10.0;
         let mut r = physics::PhysicalRealiser::new(&mut world);
-        tree.recurse(&mut r);
+        for (i, tree) in population.iter().enumerate() {
+            let i = i as shapes::body_tree::Coord;
+            r.next_spawn_pos = Vector3::new(i * padding, 5.0, 0.0);
+            tree.recurse(&mut r);
+        }
     }
 
     // add objects from physics world to renderer
