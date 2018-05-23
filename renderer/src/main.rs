@@ -12,7 +12,6 @@ use std::env;
 use shapes::body_tree::serialise;
 use shapes::physics;
 
-// TODO tidy this up with a struct
 fn new_node(window: &mut window::Window, object: &physics::ObjectShape) -> scene::SceneNode {
     match object {
         physics::ObjectShape::Cuboid(dims) => {
@@ -31,54 +30,76 @@ fn new_node(window: &mut window::Window, object: &physics::ObjectShape) -> scene
     }
 }
 
-fn main() {
-    let population = {
+struct Renderer {
+    window: window::Window,
+    world: physics::World,
+    objects: HashMap<ColliderHandle, scene::SceneNode>,
+}
+
+impl Renderer {
+    fn new() -> Self {
+        Self {
+            window: window::Window::new("Simpletons"),
+            world: physics::World::default(),
+            objects: HashMap::new(),
+        }
+    }
+
+    fn reset_population<P: Into<::std::path::PathBuf>>(&mut self, path: P) {
+        let pop = serialise::load(path);
+        let padding = 10.0;
+
+        // TODO clear old population
+
+        {
+            let mut r = physics::PhysicalRealiser::new(&mut self.world);
+            for (i, tree) in pop.iter().enumerate() {
+                let i = i as shapes::body_tree::Coord;
+                r.next_spawn_pos = Vector3::new(i * padding, 5.0, 0.0);
+                tree.recurse(&mut r);
+            }
+        }
+
+        // add objects from physics world to renderer
+        let objects = self.world.objects();
+        for (handle, _collider, obj) in objects {
+            let node = new_node(&mut self.window, &obj.shape);
+            self.objects.insert(handle, node);
+        }
+    }
+
+    fn start(&mut self) {
         let path = env::args()
             .nth(1)
             .unwrap_or_else(|| "./population.json".to_owned());
-        serialise::load(path)
-    };
 
-    let mut window = window::Window::new("Shapes renderer");
-    let mut world = physics::World::default();
+        self.reset_population(path);
 
-    {
-        let padding = 10.0;
-        let mut r = physics::PhysicalRealiser::new(&mut world);
-        for (i, tree) in population.iter().enumerate() {
-            let i = i as shapes::body_tree::Coord;
-            r.next_spawn_pos = Vector3::new(i * padding, 5.0, 0.0);
-            tree.recurse(&mut r);
-        }
-    }
+        let mut camera =
+            camera::ArcBall::new(Point3::new(30.0, 30.0, 30.0), Point3::new(0.0, 0.0, 0.0));
 
-    // add objects from physics world to renderer
-    let mut objects = HashMap::<ColliderHandle, scene::SceneNode>::new();
-    for (handle, _collider, obj) in world.objects() {
-        let node = new_node(&mut window, &obj.shape);
-        objects.insert(handle, node);
-    }
+        self.window.set_light(light::Light::StickToCamera);
 
-    let mut camera =
-        camera::ArcBall::new(Point3::new(30.0, 30.0, 30.0), Point3::new(0.0, 0.0, 0.0));
+        while self.window.render_with_camera(&mut camera) {
+            // step world
+            self.world.tick();
 
-    window.set_light(light::Light::StickToCamera);
-
-    while window.render_with_camera(&mut camera) {
-        // step world
-        world.tick();
-
-        // update scene
-        for (handle, obj, collider, body) in world.colliders() {
-            let mut node = objects.get_mut(&handle).unwrap();
-            let active = body.is_active();
-            let color = obj.colour;
-            if active {
-                node.set_local_transformation(*collider.position());
-                node.set_color(color.r, color.g, color.b);
-            } else {
-                node.set_color(color.r * 0.25, color.g * 0.25, color.b * 0.25);
+            // update scene
+            for (handle, obj, collider, body) in self.world.colliders() {
+                let mut node = self.objects.get_mut(&handle).unwrap();
+                let active = body.is_active();
+                let color = obj.colour;
+                if active {
+                    node.set_local_transformation(*collider.position());
+                    node.set_color(color.r, color.g, color.b);
+                } else {
+                    node.set_color(color.r * 0.25, color.g * 0.25, color.b * 0.25);
+                }
             }
         }
     }
+}
+
+fn main() {
+    Renderer::new().start();
 }
