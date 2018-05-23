@@ -65,7 +65,7 @@ impl Renderer {
             for (i, tree) in pop.iter().enumerate() {
                 let i = i as shapes::body_tree::Coord;
                 r.next_spawn_pos = Vector3::new(i * padding, 5.0, 0.0);
-                tree.recurse(&mut r);
+                tree.realise(&mut r);
             }
         }
 

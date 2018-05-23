@@ -65,7 +65,7 @@ impl BodyTree {
         }
     }
 
-    pub fn recurse<R: TreeRealiser>(&self, realiser: &mut R) {
+    pub fn realise<R: TreeRealiser>(&self, realiser: &mut R) {
         let (handle, joint) = realiser.root();
         self.actually_recurse(self.root, handle, &joint, realiser);
     }
@@ -144,6 +144,6 @@ mod tests {
             last_node: 0,
             expected_order: vec![(1, 0), (2, 1), (3, 2), (4, 2)],
         };
-        tree.recurse(&mut r);
+        tree.realise(&mut r);
     }
 }
