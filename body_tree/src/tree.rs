@@ -9,7 +9,7 @@ type Edge = body::Joint;
 type GraphSize = petgraph::graph::DefaultIx;
 type Tree = petgraph::Graph<Node, Edge, petgraph::Directed, GraphSize>;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct BodyTree {
     tree: Tree,
     root: NodeIndex,

@@ -15,3 +15,5 @@ pub mod serialise;
 pub mod tree;
 
 pub type Coord = f32;
+
+pub type Population = Vec<tree::BodyTree>;
