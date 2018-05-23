@@ -1,4 +1,5 @@
 use super::*;
+use nalgebra::Vector3;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Vec3 {
@@ -50,5 +51,11 @@ impl Joint {
 impl Dims {
     pub fn new(x: Coord, y: Coord, z: Coord) -> Self {
         Self { x, y, z }
+    }
+}
+
+impl Into<Vector3<Coord>> for body::Vec3 {
+    fn into(self) -> Vector3<Coord> {
+        Vector3::new(self.x, self.y, self.z)
     }
 }

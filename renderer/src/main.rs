@@ -8,8 +8,9 @@ use nalgebra::{Point3, Vector3};
 use nphysics3d::object::ColliderHandle;
 use std::collections::HashMap;
 
-use shapes::body::{Dims, Joint, JointType, RelativePosition, Rotation, ShapeDefinition};
-use shapes::{physics, tree};
+use shapes::body_tree::body::{Dims, Joint, JointType, RelativePosition, Rotation, ShapeDefinition};
+use shapes::body_tree::tree;
+use shapes::physics;
 
 // TODO tidy this up with a struct
 fn new_node(window: &mut window::Window, object: &physics::ObjectShape) -> scene::SceneNode {

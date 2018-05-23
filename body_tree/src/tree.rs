@@ -125,7 +125,7 @@ mod tests {
             body::Dims::new(5.0, 5.0, 5.0),
             body::RelativePosition::new(0.0, 0.0, 0.0),
             body::Rotation::new(0.0, 0.0, 0.0),
-            )
+        )
     }
 
     fn joint() -> Edge {

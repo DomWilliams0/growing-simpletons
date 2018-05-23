@@ -5,9 +5,8 @@ use nphysics3d::object::{Body, BodyHandle, Collider, ColliderHandle, Material};
 use nphysics3d::volumetric::Volumetric;
 use nphysics3d::world;
 
-use body;
-use tree::TreeRealiser;
-use Coord;
+use body_tree::tree::TreeRealiser;
+use body_tree::{body, Coord};
 
 const COLLIDER_MARGIN: f32 = 0.01;
 
@@ -83,7 +82,12 @@ impl Default for World {
 }
 
 impl World {
-    fn register_object(&mut self, collider: ColliderHandle, def: &body::ShapeDefinition, colour: Colour) {
+    fn register_object(
+        &mut self,
+        collider: ColliderHandle,
+        def: &body::ShapeDefinition,
+        colour: Colour,
+    ) {
         let object = WorldObject::new(ObjectShape::from_def(def), colour);
         self.objects.push((collider, object));
     }
@@ -185,7 +189,8 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
             Material::default(),
         );
 
-        self.world.register_object(collider, shape_def, COLOUR_DEFAULT);
+        self.world
+            .register_object(collider, shape_def, COLOUR_DEFAULT);
         link
     }
 
@@ -202,11 +207,5 @@ impl ObjectShape {
         match def {
             body::ShapeDefinition::Cuboid(dims, ..) => ObjectShape::Cuboid((*dims).into()),
         }
-    }
-}
-
-impl Into<Vector3<Coord>> for body::Vec3 {
-    fn into(self) -> Vector3<Coord> {
-        Vector3::new(self.x, self.y, self.z)
     }
 }

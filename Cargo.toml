@@ -12,6 +12,9 @@ path = "src/lib.rs"
 
 [dependencies]
 nphysics3d = "0.8"
-nalgebra = "0.14"
-petgraph = "0.4"
 ncollide3d = "0.15"
+nalgebra = "0.14"
+body_tree = { path = "./body_tree" }
+
+[workspace]
+exclude = ["renderer"]
