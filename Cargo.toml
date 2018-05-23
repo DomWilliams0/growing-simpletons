@@ -6,13 +6,12 @@ authors = ["Dom Williams <me@domwillia.ms>"]
 [lib]
 path = "src/lib.rs"
 
-[[bin]]
-name = "renderer"
-path = "src/renderer.rs"
+# [[bin]]
+# name = "renderer"
+# path = "src/renderer.rs"
 
 [dependencies]
 nphysics3d = "0.8"
 nalgebra = "0.14"
 petgraph = "0.4"
 ncollide3d = "0.15"
-kiss3d = "0.14.0"
