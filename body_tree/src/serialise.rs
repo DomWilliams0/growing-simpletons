@@ -5,12 +5,14 @@ use std::io::{Read, Write};
 use std::path::PathBuf;
 
 pub fn load<P: Into<PathBuf>>(path: P) -> Population {
-    let f = File::open(path.into()).expect("Failed to open file");
+    let path = path.into();
+    let f = File::open(&path).expect(&format!("Failed to read file {:?}", path));
     deserialise(f)
 }
 
 pub fn save<P: Into<PathBuf>>(path: P, pop: &Population) {
-    let f = File::create(path.into()).expect("Failed to open file");
+    let path = path.into();
+    let f = File::create(&path).expect(&format!("Failed to create file {:?}", path));
     serialise(f, pop)
 }
 
