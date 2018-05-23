@@ -15,6 +15,7 @@ nphysics3d = "0.8"
 ncollide3d = "0.15"
 nalgebra = "0.14"
 body_tree = { path = "./body_tree" }
+rand = "0.5.0"
 
 [workspace]
 exclude = ["renderer"]

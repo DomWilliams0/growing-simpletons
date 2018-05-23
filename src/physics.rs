@@ -4,6 +4,7 @@ use nphysics3d::joint::{FixedJoint, FreeJoint, Joint};
 use nphysics3d::object::{Body, BodyHandle, Collider, ColliderHandle, Material};
 use nphysics3d::volumetric::Volumetric;
 use nphysics3d::world;
+use rand::{self, Rng};
 
 use body_tree::tree::TreeRealiser;
 use body_tree::{body, Coord};
@@ -21,11 +22,6 @@ const COLOUR_GROUND: Colour = Colour {
     r: 0.1,
     g: 0.1,
     b: 0.1,
-};
-const COLOUR_DEFAULT: Colour = Colour {
-    r: 0.6,
-    g: 0.8,
-    b: 0.2,
 };
 
 pub enum ObjectShape {
@@ -118,6 +114,7 @@ impl World {
 pub struct PhysicalRealiser<'w> {
     world: &'w mut World,
     pub next_spawn_pos: Vector3<Coord>,
+    random: rand::ThreadRng,
 }
 
 impl<'w> PhysicalRealiser<'w> {
@@ -125,6 +122,7 @@ impl<'w> PhysicalRealiser<'w> {
         Self {
             world,
             next_spawn_pos: Vector3::new(0.0, 5.0, 0.0),
+            random: rand::thread_rng(),
         }
     }
 }
@@ -194,7 +192,7 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
         );
 
         self.world
-            .register_object(collider, shape_def, COLOUR_DEFAULT);
+            .register_object(collider, shape_def, Colour::random(&mut self.random));
         link
     }
 
@@ -210,6 +208,16 @@ impl ObjectShape {
     fn from_def(def: &body::ShapeDefinition) -> Self {
         match def {
             body::ShapeDefinition::Cuboid(dims, ..) => ObjectShape::Cuboid((*dims).into()),
+        }
+    }
+}
+
+impl Colour {
+    fn random(random: &mut rand::ThreadRng) -> Self {
+        Self {
+            r: random.gen(),
+            g: random.gen(),
+            b: random.gen(),
         }
     }
 }
