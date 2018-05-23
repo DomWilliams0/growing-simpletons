@@ -8,7 +8,8 @@ use nalgebra::{Point3, Vector3};
 use nphysics3d::object::ColliderHandle;
 use std::collections::HashMap;
 
-use shapes::{body, physics, tree};
+use shapes::body::{Dims, Joint, JointType, RelativePosition, Rotation, Shape};
+use shapes::{physics, tree};
 
 // TODO tidy this up with a struct
 fn new_node(window: &mut window::Window, object: &physics::ObjectShape) -> scene::SceneNode {
@@ -34,12 +35,20 @@ fn main() {
     let mut world = physics::World::default();
 
     let tree = {
-        let mut t = tree::BodyTree::with_root(body::Shape::Cuboid(body::Dims::new(1.0, 3.0, 0.1)));
+        let mut t = tree::BodyTree::with_root(Shape::Cuboid(
+            Dims::new(0.5, 2.0, 1.0),
+            RelativePosition::new(0.0, 0.0, 0.0), // pos and rotation dont matter, because relative to ground?
+            Rotation::new(0.0, 0.0, 0.0),
+        ));
         let root = t.root();
         t.add_child(
             root,
-            body::Shape::Cuboid(body::Dims::new(5.0, 1.0, 1.0)),
-            body::Joint::new(body::JointType::Fixed),
+            Shape::Cuboid(
+                Dims::new(1.0, 3.0, 0.1),
+                RelativePosition::new(0.0, 2.0, 0.0),
+                Rotation::new(1.2, 2.0, 1.0),
+            ),
+            Joint::new(JointType::Fixed),
         );
         t
     };

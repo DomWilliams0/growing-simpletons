@@ -1,15 +1,19 @@
 use super::*;
 
 #[derive(Debug, Clone, Copy)]
-pub struct Dims {
+pub struct Vec3 {
     pub x: Coord,
     pub y: Coord,
     pub z: Coord,
 }
 
+pub type Dims = Vec3;
+pub type RelativePosition = Vec3;
+pub type Rotation = Vec3;
+
 #[derive(Debug)]
 pub enum Shape {
-    Cuboid(Dims),
+    Cuboid(Dims, RelativePosition, Rotation),
 }
 
 // struct Sphere {

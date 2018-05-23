@@ -1,7 +1,7 @@
 use nalgebra::{zero, Isometry3, Point3, UnitQuaternion, Vector3};
 use ncollide3d::shape::{Cuboid, ShapeHandle};
 use nphysics3d::joint::{FixedJoint, FreeJoint, Joint};
-use nphysics3d::object::{Body, BodyHandle, Collider, ColliderHandle, Material};
+use nphysics3d::object::{Body, BodyHandle, Collider, ColliderHandle, Material, Multibody};
 use nphysics3d::volumetric::Volumetric;
 use nphysics3d::world;
 
@@ -144,27 +144,38 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
                 .add_multibody_link(parent, joint, zero(), zero(), inertia, com)
         }
 
-        let body_shape = match shape {
-            body::Shape::Cuboid(dims) => ShapeHandle::new(Cuboid::new((*dims).into())),
+        // get parent global position
+        let parent_pos = {
+            match self.world.physics.multibody_link(parent) {
+                Some(link) => link.position(),
+                None => Isometry3::new(Vector3::new(0.0, 10.0, 0.0), zero()), // spawn position of full entity
+            }
         };
 
-        let pos = Vector3::new(0.0, 10.0, 0.0); // TODO position?
-        let relative = {
-            let q = UnitQuaternion::new(Vector3::new(0.0, -1.5, 0.5));
-            let mut i = Isometry3::new(Vector3::new(0.0, 2.0, 0.5), zero());
-            i.append_rotation_mut(&q);
-            i
+        // get parameters from shape definition
+        // TODO rename shape to ShapeDefinition
+        let (body_shape, rel_pos, rotation) = match shape {
+            body::Shape::Cuboid(dims, pos, rot) => {
+                (ShapeHandle::new(Cuboid::new((*dims).into())), pos, rot)
+            }
+        };
+
+        // parse parameters
+        let joint_params = {
+            let mut shift = Isometry3::new((*rel_pos).into(), zero());
+            shift.append_rotation_mut(&UnitQuaternion::new((*rotation).into()));
+            shift
         };
         let link = match parent_joint.joint_type {
-            body::JointType::Ground => add_link(
+            body::JointType::Ground => {
+                add_link(self.world, parent, FreeJoint::new(parent_pos), &body_shape)
+            }
+            body::JointType::Fixed => add_link(
                 self.world,
                 parent,
-                FreeJoint::new(Isometry3::new(pos, zero())),
+                FixedJoint::new(joint_params),
                 &body_shape,
             ),
-            body::JointType::Fixed => {
-                add_link(self.world, parent, FixedJoint::new(relative), &body_shape)
-            }
         };
 
         let collider = self.world.physics.add_collider(
@@ -190,12 +201,12 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
 impl ObjectShape {
     fn from_body_shape(from: &body::Shape) -> Self {
         match from {
-            body::Shape::Cuboid(dims) => ObjectShape::Cuboid((*dims).into()),
+            body::Shape::Cuboid(dims, ..) => ObjectShape::Cuboid((*dims).into()),
         }
     }
 }
 
-impl Into<Vector3<Coord>> for body::Dims {
+impl Into<Vector3<Coord>> for body::Vec3 {
     fn into(self) -> Vector3<Coord> {
         Vector3::new(self.x, self.y, self.z)
     }
