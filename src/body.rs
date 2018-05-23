@@ -12,7 +12,7 @@ pub type RelativePosition = Vec3;
 pub type Rotation = Vec3;
 
 #[derive(Debug)]
-pub enum Shape {
+pub enum ShapeDefinition {
     Cuboid(Dims, RelativePosition, Rotation),
 }
 

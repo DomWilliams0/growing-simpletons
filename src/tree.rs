@@ -4,7 +4,7 @@ use petgraph::visit::EdgeRef;
 
 use body;
 
-type Node = body::Shape;
+type Node = body::ShapeDefinition;
 type Edge = body::Joint;
 type GraphSize = petgraph::graph::DefaultIx;
 type Tree = petgraph::Graph<Node, Edge, petgraph::Directed, GraphSize>;
@@ -76,7 +76,7 @@ pub trait TreeRealiser {
 
     fn new_shape(
         &mut self,
-        shape: &body::Shape,
+        shape_def: &body::ShapeDefinition,
         parent: Self::RealisedHandle,
         parent_joint: &body::Joint,
     ) -> Self::RealisedHandle;
@@ -98,9 +98,9 @@ mod tests {
 
         fn new_shape(
             &mut self,
-            _shape: &body::Shape,
+            _: &body::ShapeDefinition,
             parent: Self::RealisedHandle,
-            _parent_joint: &body::Joint,
+            _: &body::Joint,
         ) -> Self::RealisedHandle {
             let id = {
                 self.last_node += 1;
@@ -121,7 +121,11 @@ mod tests {
     }
 
     fn shape() -> Node {
-        body::Shape::Cuboid(body::Dims::new(5.0, 5.0, 5.0))
+        body::ShapeDefinition::Cuboid(
+            body::Dims::new(5.0, 5.0, 5.0),
+            body::RelativePosition::new(0.0, 0.0, 0.0),
+            body::Rotation::new(0.0, 0.0, 0.0),
+            )
     }
 
     fn joint() -> Edge {

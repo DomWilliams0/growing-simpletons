@@ -1,7 +1,7 @@
 use nalgebra::{zero, Isometry3, Point3, UnitQuaternion, Vector3};
 use ncollide3d::shape::{Cuboid, ShapeHandle};
 use nphysics3d::joint::{FixedJoint, FreeJoint, Joint};
-use nphysics3d::object::{Body, BodyHandle, Collider, ColliderHandle, Material, Multibody};
+use nphysics3d::object::{Body, BodyHandle, Collider, ColliderHandle, Material};
 use nphysics3d::volumetric::Volumetric;
 use nphysics3d::world;
 
@@ -83,8 +83,8 @@ impl Default for World {
 }
 
 impl World {
-    fn register_object(&mut self, collider: ColliderHandle, shape: &body::Shape, colour: Colour) {
-        let object = WorldObject::new(ObjectShape::from_body_shape(shape), colour);
+    fn register_object(&mut self, collider: ColliderHandle, def: &body::ShapeDefinition, colour: Colour) {
+        let object = WorldObject::new(ObjectShape::from_def(def), colour);
         self.objects.push((collider, object));
     }
 
@@ -126,7 +126,7 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
 
     fn new_shape(
         &mut self,
-        shape: &body::Shape,
+        shape_def: &body::ShapeDefinition,
         parent: Self::RealisedHandle,
         parent_joint: &body::Joint,
     ) -> Self::RealisedHandle {
@@ -153,9 +153,8 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
         };
 
         // get parameters from shape definition
-        // TODO rename shape to ShapeDefinition
-        let (body_shape, rel_pos, rotation) = match shape {
-            body::Shape::Cuboid(dims, pos, rot) => {
+        let (body_shape, rel_pos, rotation) = match shape_def {
+            body::ShapeDefinition::Cuboid(dims, pos, rot) => {
                 (ShapeHandle::new(Cuboid::new((*dims).into())), pos, rot)
             }
         };
@@ -186,7 +185,7 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
             Material::default(),
         );
 
-        self.world.register_object(collider, shape, COLOUR_DEFAULT);
+        self.world.register_object(collider, shape_def, COLOUR_DEFAULT);
         link
     }
 
@@ -199,9 +198,9 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
 }
 
 impl ObjectShape {
-    fn from_body_shape(from: &body::Shape) -> Self {
-        match from {
-            body::Shape::Cuboid(dims, ..) => ObjectShape::Cuboid((*dims).into()),
+    fn from_def(def: &body::ShapeDefinition) -> Self {
+        match def {
+            body::ShapeDefinition::Cuboid(dims, ..) => ObjectShape::Cuboid((*dims).into()),
         }
     }
 }

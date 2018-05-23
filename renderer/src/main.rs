@@ -8,7 +8,7 @@ use nalgebra::{Point3, Vector3};
 use nphysics3d::object::ColliderHandle;
 use std::collections::HashMap;
 
-use shapes::body::{Dims, Joint, JointType, RelativePosition, Rotation, Shape};
+use shapes::body::{Dims, Joint, JointType, RelativePosition, Rotation, ShapeDefinition};
 use shapes::{physics, tree};
 
 // TODO tidy this up with a struct
@@ -35,7 +35,7 @@ fn main() {
     let mut world = physics::World::default();
 
     let tree = {
-        let mut t = tree::BodyTree::with_root(Shape::Cuboid(
+        let mut t = tree::BodyTree::with_root(ShapeDefinition::Cuboid(
             Dims::new(0.5, 2.0, 1.0),
             RelativePosition::new(0.0, 0.0, 0.0), // pos and rotation dont matter, because relative to ground?
             Rotation::new(0.0, 0.0, 0.0),
@@ -43,7 +43,7 @@ fn main() {
         let root = t.root();
         t.add_child(
             root,
-            Shape::Cuboid(
+            ShapeDefinition::Cuboid(
                 Dims::new(1.0, 3.0, 0.1),
                 RelativePosition::new(0.0, 2.0, 0.0),
                 Rotation::new(1.2, 2.0, 1.0),
