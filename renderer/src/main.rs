@@ -1,8 +1,10 @@
+extern crate glfw;
 extern crate kiss3d;
 extern crate nalgebra;
 extern crate nphysics3d;
 extern crate shapes;
 
+use glfw::{Action, Key, WindowEvent};
 use kiss3d::{camera, light, scene, window};
 use nalgebra::{Point3, Vector3};
 use nphysics3d::object::ColliderHandle;
@@ -49,8 +51,15 @@ impl Renderer {
         let pop = serialise::load(path);
         let padding = 10.0;
 
-        // TODO clear old population
-
+        // clear old population
+        {
+            self.world.clear();
+            for mut node in self.objects.values_mut() {
+                self.window.remove(&mut node);
+            }
+            self.objects.clear();
+        }
+        // add new population
         {
             let mut r = physics::PhysicalRealiser::new(&mut self.world);
             for (i, tree) in pop.iter().enumerate() {
@@ -61,8 +70,7 @@ impl Renderer {
         }
 
         // add objects from physics world to renderer
-        let objects = self.world.objects();
-        for (handle, _collider, obj) in objects {
+        for (handle, _collider, obj) in self.world.objects() {
             let node = new_node(&mut self.window, &obj.shape);
             self.objects.insert(handle, node);
         }
@@ -73,7 +81,7 @@ impl Renderer {
             .nth(1)
             .unwrap_or_else(|| "./population.json".to_owned());
 
-        self.reset_population(path);
+        self.reset_population(&path);
 
         let mut camera =
             camera::ArcBall::new(Point3::new(30.0, 30.0, 30.0), Point3::new(0.0, 0.0, 0.0));
@@ -86,7 +94,10 @@ impl Renderer {
 
             // update scene
             for (handle, obj, collider, body) in self.world.colliders() {
-                let mut node = self.objects.get_mut(&handle).unwrap();
+                let mut node = match self.objects.get_mut(&handle) {
+                    Some(n) => n,
+                    None => continue,
+                };
                 let active = body.is_active();
                 let color = obj.colour;
                 if active {
@@ -94,6 +105,13 @@ impl Renderer {
                     node.set_color(color.r, color.g, color.b);
                 } else {
                     node.set_color(color.r * 0.25, color.g * 0.25, color.b * 0.25);
+                }
+            }
+
+            // keyboard
+            for mut e in self.window.events().iter() {
+                if let WindowEvent::Key(Key::Enter, _, Action::Press, _) = e.value {
+                    self.reset_population(&path);
                 }
             }
         }

@@ -11,7 +11,7 @@ use body_tree::{body, Coord};
 
 const COLLIDER_MARGIN: f32 = 0.01;
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Colour {
     pub r: f32,
     pub g: f32,
@@ -24,11 +24,13 @@ const COLOUR_GROUND: Colour = Colour {
     b: 0.1,
 };
 
+#[derive(Debug)]
 pub enum ObjectShape {
     Cuboid(Vector3<Coord>),
     Plane(Point3<Coord>, Vector3<Coord>, Coord),
 }
 
+#[derive(Debug)]
 pub struct WorldObject {
     pub shape: ObjectShape,
     pub colour: Colour,
@@ -49,30 +51,9 @@ impl Default for World {
     fn default() -> Self {
         let mut world = world::World::new();
         world.set_gravity(Vector3::new(0.0, -9.81, 0.0));
-        let material = Material::default();
-
-        let ground_size = 50.0;
-        let ground_shape =
-            ShapeHandle::new(Cuboid::new(Vector3::repeat(ground_size - COLLIDER_MARGIN)));
-        let ground_pos = Isometry3::new(Vector3::y() * -ground_size, zero());
-
-        let ground = world.add_collider(
-            COLLIDER_MARGIN,
-            ground_shape,
-            BodyHandle::ground(),
-            ground_pos,
-            material,
-        );
-
-        let ground_obj = WorldObject::new(
-            ObjectShape::Plane(Point3::new(0.0, 0.0, 0.0), Vector3::y(), ground_size),
-            COLOUR_GROUND,
-        );
-        let objects = vec![(ground, ground_obj)];
-
         Self {
             physics: world,
-            objects,
+            objects: Vec::new(),
         }
     }
 }
@@ -85,6 +66,10 @@ impl World {
         colour: Colour,
     ) {
         let object = WorldObject::new(ObjectShape::from_def(def), colour);
+        self.register_created_object(collider, object);
+    }
+
+    fn register_created_object(&mut self, collider: ColliderHandle, object: WorldObject) {
         self.objects.push((collider, object));
     }
 
@@ -108,6 +93,44 @@ impl World {
 
     pub fn tick(&mut self) {
         self.physics.step();
+    }
+
+    fn add_ground(&mut self) {
+        let material = Material::default();
+        let ground_size = 50.0;
+        let ground_shape =
+            ShapeHandle::new(Cuboid::new(Vector3::repeat(ground_size - COLLIDER_MARGIN)));
+        let ground_pos = Isometry3::new(Vector3::y() * -ground_size, zero());
+
+        let ground = self.physics.add_collider(
+            COLLIDER_MARGIN,
+            ground_shape,
+            BodyHandle::ground(),
+            ground_pos,
+            material,
+        );
+
+        let ground_obj = WorldObject::new(
+            ObjectShape::Plane(Point3::new(0.0, 0.0, 0.0), Vector3::y(), ground_size),
+            COLOUR_GROUND,
+        );
+        self.register_created_object(ground, ground_obj);
+    }
+
+    pub fn clear(&mut self) {
+        for (ch, _) in &self.objects {
+            let bh = {
+                match self.physics.collider(*ch) {
+                    Some(col) => col.data().body(),
+                    None => continue,
+                }
+            };
+            self.physics.remove_bodies(&[bh]);
+        }
+        self.objects.clear();
+
+        // rather awful
+        self.add_ground();
     }
 }
 
