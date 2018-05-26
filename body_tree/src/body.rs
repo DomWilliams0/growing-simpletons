@@ -38,11 +38,7 @@ pub mod def {
             Rotation::new(rot.1),
             Rotation::new(rot.2),
         );
-        ShapeDefinition::Cuboid {
-            dims,
-            pos,
-            rot,
-        }
+        ShapeDefinition::Cuboid { dims, pos, rot }
     }
 
     impl ParamHolder for ShapeDefinition {

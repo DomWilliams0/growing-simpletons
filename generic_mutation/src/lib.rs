@@ -40,7 +40,7 @@ pub trait RangedParam {
 }
 
 /// Collection of related parameters in multiple dimensions.
-pub trait ParamSet<P: RangedParam>: ParamHolder + Default { }
+pub trait ParamSet<P: RangedParam>: ParamHolder + Default {}
 
 #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[derive(Debug, Copy, Clone, Default)]
@@ -169,10 +169,10 @@ mod tests {
         let holder = Rc::new(RefCell::new(TestHolder {
             x: TestParam { 0: 0.0 },
         }));
-        mutate(holder.clone(), ConstGen { 0: 0.5 });
+        mutate(holder.clone(), &mut ConstGen { 0: 0.5 });
 
         let expected = 10.0; // 20.0 * 0.5
-        let diff = (holder.borrow().x.0 - expected).abs();
+        let diff = (holder.borrow().x.get_scaled() - expected).abs();
         assert!(diff < 0.001);
     }
 
@@ -181,12 +181,12 @@ mod tests {
         let holder = Rc::new(RefCell::new(TestHolder {
             x: TestParam { 0: 0.0 },
         }));
-        mutate(holder.clone(), ConstGen { 0: -0.5 });
-        assert!(holder.borrow().x.0 < 0.001);
+        mutate(holder.clone(), &mut ConstGen { 0: -0.5 });
+        assert!(holder.borrow().x.get_scaled() < 0.001);
 
         // should be equal to max
-        mutate(holder.clone(), ConstGen { 0: 1.5 });
-        assert!((holder.borrow().x.0 - 20.0).abs() < 0.001);
+        mutate(holder.clone(), &mut ConstGen { 0: 1.5 });
+        assert!((holder.borrow().x.get_scaled() - 20.0).abs() < 0.001);
     }
 
     #[derive(Debug, Default)]
@@ -227,12 +227,12 @@ mod tests {
     #[test]
     fn test_paramset() {
         let holder = Rc::new(RefCell::new(MultiShape::default()));
-        mutate(holder.clone(), ConstGen { 0: 0.25 });
+        mutate(holder.clone(), &mut ConstGen { 0: 0.25 });
 
         let expected = 2.5; // 10.0 * 0.25
         let pos = &holder.borrow().pos;
-        assert!((pos.x.0 - expected).abs() < 0.001);
-        assert!((pos.y.0 - expected).abs() < 0.001);
-        assert!((pos.z.0 - expected).abs() < 0.001);
+        assert!((pos.x.get_scaled() - expected).abs() < 0.001);
+        assert!((pos.y.get_scaled() - expected).abs() < 0.001);
+        assert!((pos.z.get_scaled() - expected).abs() < 0.001);
     }
 }
