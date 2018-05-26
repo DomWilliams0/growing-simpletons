@@ -10,7 +10,8 @@ serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
 rand = "0.5.0"
-generic_mutation = { path = "../generic_mutation" }
+generic_mutation = { path = "../generic_mutation", features = ["serialize"] }
+derive-new = "0.5.4"
 
 [dependencies.petgraph]
 version = "0.4"

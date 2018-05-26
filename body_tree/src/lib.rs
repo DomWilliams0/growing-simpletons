@@ -13,10 +13,13 @@ extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
 
+#[macro_use]
+extern crate derive_new;
+
 pub mod body;
 pub mod serialise;
 pub mod tree;
 
-pub type Coord = f32;
+pub type Coord = f64;
 
 pub type Population = Vec<tree::BodyTree>;

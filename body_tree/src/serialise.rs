@@ -27,27 +27,20 @@ fn serialise<W: Write>(writer: W, pop: &Population) {
 #[cfg(test)]
 mod tests {
     use super::{deserialise, serialise};
-    use body::*;
+    use body::def::*;
     use std::io::Cursor;
     use tree::*;
 
     #[test]
     fn save_and_load() {
         let tree = {
-            let mut t = BodyTree::with_root(ShapeDefinition::Cuboid(
-                Dims::new(0.5, 2.0, 1.0),
-                RelativePosition::new(0.0, 0.0, 0.0),
-                Rotation::new(0.0, 0.0, 0.0),
-            ));
+            let root_shape = new_cuboid((0.5, 2.0, 1.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0));
+            let mut t = BodyTree::with_root(root_shape);
             let root = t.root();
             t.add_child(
                 root,
-                ShapeDefinition::Cuboid(
-                    Dims::new(1.0, 3.0, 0.1),
-                    RelativePosition::new(0.0, 2.0, 0.0),
-                    Rotation::new(1.2, 2.0, 1.0),
-                ),
-                Joint::new(JointType::Fixed),
+                new_cuboid((1.0, 3.0, 0.1), (0.0, 2.0, 0.0), (1.2, 2.0, 1.0)),
+                Joint::Fixed,
             );
             t
         };
@@ -56,7 +49,7 @@ mod tests {
         let mut cursor = Cursor::new(vec);
         let pop = vec![tree];
 
-        let serialised = serialise(&mut cursor, &pop);
+        let _serialised = serialise(&mut cursor, &pop);
         cursor.set_position(0);
         let deserialised = deserialise(&mut cursor);
 

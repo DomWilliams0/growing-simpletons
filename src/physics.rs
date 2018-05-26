@@ -7,9 +7,9 @@ use nphysics3d::world;
 use rand::{self, Rng};
 
 use body_tree::tree::TreeRealiser;
-use body_tree::{body, Coord};
+use body_tree::{body::def, Coord};
 
-const COLLIDER_MARGIN: f32 = 0.01;
+const COLLIDER_MARGIN: Coord = 0.01;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Colour {
@@ -62,7 +62,7 @@ impl World {
     fn register_object(
         &mut self,
         collider: ColliderHandle,
-        def: &body::ShapeDefinition,
+        def: &def::ShapeDefinition,
         colour: Colour,
     ) {
         let object = WorldObject::new(ObjectShape::from_def(def), colour);
@@ -150,14 +150,32 @@ impl<'w> PhysicalRealiser<'w> {
     }
 }
 
+fn shape_from_def(
+    definition: &def::ShapeDefinition,
+) -> (ShapeHandle<Coord>, Vector3<Coord>, Vector3<Coord>) {
+    match definition {
+        def::ShapeDefinition::Cuboid { dims, pos, rot } => {
+            let (w, h, d) = dims.components();
+            let (px, py, pz) = pos.components();
+            let (rx, ry, rz) = rot.components();
+            let cuboid = Cuboid::new(Vector3::new(w, h, d));
+            (
+                ShapeHandle::new(cuboid),
+                Vector3::new(px, py, pz),
+                Vector3::new(rx, ry, rz),
+            )
+        }
+    }
+}
+
 impl<'w> TreeRealiser for PhysicalRealiser<'w> {
     type RealisedHandle = BodyHandle;
 
     fn new_shape(
         &mut self,
-        shape_def: &body::ShapeDefinition,
+        shape_def: &def::ShapeDefinition,
         parent: Self::RealisedHandle,
-        parent_joint: &body::Joint,
+        parent_joint: &def::Joint,
     ) -> Self::RealisedHandle {
         // helper
         fn add_link<J: Joint<Coord>>(
@@ -182,23 +200,19 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
         };
 
         // get parameters from shape definition
-        let (body_shape, rel_pos, rotation) = match shape_def {
-            body::ShapeDefinition::Cuboid(dims, pos, rot) => {
-                (ShapeHandle::new(Cuboid::new((*dims).into())), pos, rot)
-            }
-        };
+        let (body_shape, rel_pos, rotation) = shape_from_def(shape_def);
 
         // parse parameters
         let joint_params = {
-            let mut shift = Isometry3::new((*rel_pos).into(), zero());
-            shift.append_rotation_mut(&UnitQuaternion::new((*rotation).into()));
+            let mut shift = Isometry3::new(rel_pos, zero());
+            shift.append_rotation_mut(&UnitQuaternion::new(rotation));
             shift
         };
-        let link = match parent_joint.joint_type {
-            body::JointType::Ground => {
+        let link = match parent_joint {
+            def::Joint::Ground => {
                 add_link(self.world, parent, FreeJoint::new(parent_pos), &body_shape)
             }
-            body::JointType::Fixed => add_link(
+            def::Joint::Fixed => add_link(
                 self.world,
                 parent,
                 FixedJoint::new(joint_params),
@@ -219,18 +233,18 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
         link
     }
 
-    fn root(&self) -> (Self::RealisedHandle, body::Joint) {
-        (
-            BodyHandle::ground(),
-            body::Joint::new(body::JointType::Ground),
-        )
+    fn root(&self) -> (Self::RealisedHandle, def::Joint) {
+        (BodyHandle::ground(), def::Joint::Ground)
     }
 }
 
 impl ObjectShape {
-    fn from_def(def: &body::ShapeDefinition) -> Self {
+    fn from_def(def: &def::ShapeDefinition) -> Self {
         match def {
-            body::ShapeDefinition::Cuboid(dims, ..) => ObjectShape::Cuboid((*dims).into()),
+            def::ShapeDefinition::Cuboid { dims, .. } => {
+                let (w, h, d) = dims.components();
+                ObjectShape::Cuboid(Vector3::new(w, h, d))
+            }
         }
     }
 }

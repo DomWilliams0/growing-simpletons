@@ -67,6 +67,9 @@ impl<P: RangedParam> ParamHolder for ParamSet3d<P> {
 }
 
 impl<P: RangedParam> ParamSet3d<P> {
+    pub fn new(x: P, y: P, z: P) -> Self {
+        Self { x, y, z }
+    }
     pub fn components(&self) -> (Param, Param, Param) {
         (self.x.get(), self.y.get(), self.z.get())
     }

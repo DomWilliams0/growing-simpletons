@@ -3,11 +3,11 @@ pub use petgraph::graph::NodeIndex;
 use petgraph::visit::{Dfs, EdgeRef};
 use rand::{self, Rng, RngCore};
 
-use body;
+use body::def;
 use generic_mutation;
 
-type Node = body::ShapeDefinition;
-type Edge = body::Joint;
+type Node = def::ShapeDefinition;
+type Edge = def::Joint;
 type GraphSize = petgraph::graph::DefaultIx;
 type Tree = petgraph::Graph<Node, Edge, petgraph::Directed, GraphSize>;
 
@@ -51,7 +51,7 @@ impl BodyTree {
         &self,
         current: NodeIndex,
         parent_handle: R::RealisedHandle,
-        parent_joint: &body::Joint,
+        parent_joint: &def::Joint,
         realiser: &mut R,
     ) {
         let node = &self.tree[current];
@@ -105,17 +105,18 @@ pub trait TreeRealiser {
 
     fn new_shape(
         &mut self,
-        shape_def: &body::ShapeDefinition,
+        shape_def: &def::ShapeDefinition,
         parent: Self::RealisedHandle,
-        parent_joint: &body::Joint,
+        parent_joint: &def::Joint,
     ) -> Self::RealisedHandle;
 
-    fn root(&self) -> (Self::RealisedHandle, body::Joint);
+    fn root(&self) -> (Self::RealisedHandle, def::Joint);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use body::def;
 
     struct DebugRealiser {
         last_node: i64,
@@ -127,9 +128,9 @@ mod tests {
 
         fn new_shape(
             &mut self,
-            _: &body::ShapeDefinition,
+            _: &def::ShapeDefinition,
             parent: Self::RealisedHandle,
-            _: &body::Joint,
+            _: &def::Joint,
         ) -> Self::RealisedHandle {
             let id = {
                 self.last_node += 1;
@@ -144,21 +145,17 @@ mod tests {
             id
         }
 
-        fn root(&self) -> (Self::RealisedHandle, body::Joint) {
-            (0, body::Joint::new(body::JointType::Fixed))
+        fn root(&self) -> (Self::RealisedHandle, def::Joint) {
+            (0, def::Joint::Fixed)
         }
     }
 
     fn shape() -> Node {
-        body::ShapeDefinition::Cuboid(
-            body::Dims::new(5.0, 5.0, 5.0),
-            body::RelativePosition::new(0.0, 0.0, 0.0),
-            body::Rotation::new(0.0, 0.0, 0.0),
-        )
+        def::new_cuboid((5.0, 5.0, 5.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0))
     }
 
     fn joint() -> Edge {
-        body::Joint::new(body::JointType::Fixed)
+        def::Joint::Fixed
     }
 
     #[test]

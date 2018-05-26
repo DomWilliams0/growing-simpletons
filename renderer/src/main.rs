@@ -16,17 +16,23 @@ use shapes::physics;
 
 fn new_node(window: &mut window::Window, object: &physics::ObjectShape) -> scene::SceneNode {
     match object {
-        physics::ObjectShape::Cuboid(dims) => {
-            window.add_cube(dims.x * 2.0, dims.y * 2.0, dims.z * 2.0)
-        }
+        physics::ObjectShape::Cuboid(dims) => window.add_cube(
+            (dims.x * 2.0) as f32,
+            (dims.y * 2.0) as f32,
+            (dims.z * 2.0) as f32,
+        ),
         physics::ObjectShape::Plane(pos, norm, size) => {
-            let mut plane = window.add_quad(size * 2.0, size * 2.0, 100, 100);
+            let size = (size * 2.0) as f32;
+            let mut plane = window.add_quad(size, size, 100, 100);
             let up = if norm.z == 0.0 && norm.y == 0.0 {
                 Vector3::z()
             } else {
                 Vector3::x()
             };
-            plane.reorient(pos, &(*pos + *norm), &up);
+
+            let pos: Point3<f32> = nalgebra::convert(*pos);
+            let norm: Vector3<f32> = nalgebra::convert(*norm);
+            plane.reorient(&pos, &(pos + norm), &up);
             plane
         }
     }
@@ -101,7 +107,7 @@ impl Renderer {
                 let active = body.is_active();
                 let color = obj.colour;
                 if active {
-                    node.set_local_transformation(*collider.position());
+                    node.set_local_transformation(nalgebra::convert(*collider.position()));
                     node.set_color(color.r, color.g, color.b);
                 } else {
                     node.set_color(color.r * 0.25, color.g * 0.25, color.b * 0.25);

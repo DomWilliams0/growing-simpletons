@@ -1,61 +1,102 @@
-use super::*;
-use nalgebra::Vector3;
+pub mod def {
+    use super::params::*;
+    use generic_mutation::ParamSet3d;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct Vec3 {
-    pub x: Coord,
-    pub y: Coord,
-    pub z: Coord,
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub enum ShapeDefinition {
+        Cuboid {
+            dims: ParamSet3d<Dimension>,
+            pos: ParamSet3d<RelativePos>,
+            rot: ParamSet3d<Rotation>,
+        },
+    }
+
+    #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+    pub enum Joint {
+        Fixed,
+        Ground,
+    }
+
+    // TODO this should be so much shorter
+    pub fn new_cuboid(
+        dims: (f64, f64, f64),
+        pos: (f64, f64, f64),
+        rot: (f64, f64, f64),
+    ) -> ShapeDefinition {
+        let dims = ParamSet3d::new(
+            Dimension::new(dims.0),
+            Dimension::new(dims.1),
+            Dimension::new(dims.2),
+        );
+        let pos = ParamSet3d::new(
+            RelativePos::new(pos.0),
+            RelativePos::new(pos.1),
+            RelativePos::new(pos.2),
+        );
+        let rot = ParamSet3d::new(
+            Rotation::new(rot.0),
+            Rotation::new(rot.1),
+            Rotation::new(rot.2),
+        );
+        ShapeDefinition::Cuboid { dims, pos, rot }
+    }
 }
 
-pub type Dims = Vec3;
-pub type RelativePosition = Vec3;
-pub type Rotation = Vec3;
+pub mod params {
+    use generic_mutation::{Param, RangedParam};
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum ShapeDefinition {
-    Cuboid(Dims, RelativePosition, Rotation),
-}
+    /// x y z size of a cuboid;
+    #[derive(Debug, Clone, Copy, new, Serialize, Deserialize)]
+    pub struct Dimension(f64);
 
-// struct Sphere {
-//     radius: Coord,
-// }
+    /// x y z relative position to parent
+    #[derive(Debug, Clone, Copy, new, Serialize, Deserialize)]
+    pub struct RelativePos(f64);
 
-#[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
-struct ConnectPoint(Coord, Coord, Coord);
+    /// x y z rotation relative to parent
+    #[derive(Debug, Clone, Copy, new, Serialize, Deserialize)]
+    pub struct Rotation(f64);
 
-// TODO other joint types with controllable inputs
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-pub struct Joint {
-    src_connect: ConnectPoint,
-    dst_connect: ConnectPoint,
-    pub joint_type: JointType,
-}
+    impl RangedParam for Dimension {
+        fn range(&self) -> (Param, Param) {
+            (0.1, 10.0)
+        }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-pub enum JointType {
-    Ground,
-    Fixed,
-}
+        fn get(&self) -> Param {
+            self.0
+        }
 
-impl Joint {
-    pub fn new(joint_type: JointType) -> Self {
-        Self {
-            src_connect: Default::default(),
-            dst_connect: Default::default(),
-            joint_type,
+        fn get_mut(&mut self) -> &mut Param {
+            &mut self.0
         }
     }
-}
 
-impl Dims {
-    pub fn new(x: Coord, y: Coord, z: Coord) -> Self {
-        Self { x, y, z }
-    }
-}
+    impl RangedParam for RelativePos {
+        fn range(&self) -> (Param, Param) {
+            (0.0, 4.0) // TODO depends on parent and own dimensions!
+        }
 
-impl Into<Vector3<Coord>> for body::Vec3 {
-    fn into(self) -> Vector3<Coord> {
-        Vector3::new(self.x, self.y, self.z)
+        fn get(&self) -> Param {
+            self.0
+        }
+
+        fn get_mut(&mut self) -> &mut Param {
+            &mut self.0
+        }
     }
+
+    impl RangedParam for Rotation {
+        fn range(&self) -> (Param, Param) {
+            (0.0, ::std::f64::consts::PI)
+        }
+
+        fn get(&self) -> Param {
+            self.0
+        }
+
+        fn get_mut(&mut self) -> &mut Param {
+            &mut self.0
+        }
+    }
+
 }
