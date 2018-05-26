@@ -9,4 +9,3 @@ fmt:
 
 test:
 	cargo test --all
-	cd renderer; cargo test
