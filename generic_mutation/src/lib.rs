@@ -30,6 +30,32 @@ pub trait RangedParam {
     }
 }
 
+/// Collection of related parameters in multiple dimensions.
+pub trait ParamSet<P: RangedParam>: ParamHolder {}
+
+#[derive(Debug, Default)]
+pub struct ParamSet3d<P: RangedParam> {
+    x: P,
+    y: P,
+    z: P,
+}
+
+impl<P: RangedParam> ParamSet<P> for ParamSet3d<P> {}
+
+impl<P: RangedParam> ParamHolder for ParamSet3d<P> {
+    fn param_count(&self) -> usize {
+        3
+    }
+    fn get_param(&mut self, index: usize) -> &mut RangedParam {
+        match index % 3 {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            2 => &mut self.z,
+            _ => panic!("out of bounds"),
+        }
+    }
+}
+
 /// A mutation generator, that produces an offset to add to the current value.
 /// Should range between -1.0 and 1.0, but the result will be clamped anyway
 pub trait MutationGen {
@@ -133,5 +159,48 @@ mod tests {
         // should be equal to max
         mutate(holder.clone(), ConstGen { 0: 1.5 });
         assert!((holder.borrow().x.0 - 20.0).abs() < 0.001);
+    }
+
+    #[derive(Debug, Default)]
+    struct Pos(Param);
+
+    #[derive(Debug, Default)]
+    struct MultiShape {
+        pos: ParamSet3d<Pos>,
+    }
+
+    impl RangedParam for Pos {
+        fn range(&self) -> (Param, Param) {
+            (0.0, 10.0)
+        }
+
+        fn get(&mut self) -> &mut Param {
+            &mut self.0
+        }
+    }
+
+    impl ParamHolder for MultiShape {
+        fn param_count(&self) -> usize {
+            3
+        }
+
+        fn get_param(&mut self, index: usize) -> &mut RangedParam {
+            match index {
+                0...2 => self.pos.get_param(index),
+                _ => panic!("Bad param index"),
+            }
+        }
+    }
+
+    #[test]
+    fn test_paramset() {
+        let holder = Rc::new(RefCell::new(MultiShape::default()));
+        mutate(holder.clone(), ConstGen { 0: 0.25 });
+
+        let expected = 2.5; // 10.0 * 0.25
+        let pos = &holder.borrow().pos;
+        assert!((pos.x.0 - expected).abs() < 0.001);
+        assert!((pos.y.0 - expected).abs() < 0.001);
+        assert!((pos.z.0 - expected).abs() < 0.001);
     }
 }
