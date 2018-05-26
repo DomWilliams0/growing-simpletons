@@ -3,4 +3,9 @@ name = "generic_mutation"
 version = "0.1.0"
 authors = ["Dom Williams <me@domwillia.ms>"]
 
+[features]
+serialize = ["serde", "serde_derive"]
+
 [dependencies]
+serde = { version = "1.0", optional = true }
+serde_derive = { version = "1.0", optional = true }

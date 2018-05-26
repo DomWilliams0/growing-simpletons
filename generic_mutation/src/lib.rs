@@ -2,6 +2,13 @@ use std::cell::RefCell;
 use std::ops::AddAssign;
 use std::rc::Rc;
 
+#[cfg(feature = "serialize")]
+extern crate serde;
+
+#[macro_use]
+#[cfg(feature = "serialize")]
+extern crate serde_derive;
+
 pub type Param = f64;
 pub type ParamHolderRef<P> = Rc<RefCell<P>>;
 
@@ -33,7 +40,8 @@ pub trait RangedParam {
 /// Collection of related parameters in multiple dimensions.
 pub trait ParamSet<P: RangedParam>: ParamHolder {}
 
-#[derive(Debug, Default)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct ParamSet3d<P: RangedParam> {
     x: P,
     y: P,
