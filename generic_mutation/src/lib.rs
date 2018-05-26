@@ -29,11 +29,13 @@ pub trait RangedParam {
     /// (min, max)
     fn range(&self) -> (Param, Param);
 
-    fn get(&mut self) -> &mut Param;
+    fn get(&self) -> Param;
+
+    fn get_mut(&mut self) -> &mut Param;
 
     fn update(&mut self, val: Param) {
         let (min, max) = self.range();
-        *self.get() = (max - min) * val + min;
+        *self.get_mut() = (max - min) * val + min;
     }
 }
 
@@ -64,6 +66,12 @@ impl<P: RangedParam> ParamHolder for ParamSet3d<P> {
     }
 }
 
+impl<P: RangedParam> ParamSet3d<P> {
+    pub fn components(&self) -> (Param, Param, Param) {
+        (self.x.get(), self.y.get(), self.z.get())
+    }
+}
+
 /// A mutation generator, that produces an offset to add to the current value.
 /// Should range between -1.0 and 1.0, but the result will be clamped anyway
 pub trait MutationGen {
@@ -80,7 +88,7 @@ impl<PH: ParamHolder> GenericParams<PH> {
 impl<'a> AddAssign<Param> for &'a mut RangedParam {
     fn add_assign(&mut self, rhs: Param) {
         let clamped = {
-            let val = *self.get() + rhs;
+            let val = *self.get_mut() + rhs;
             if val < 0.0 {
                 0.0
             } else if val > 1.0 {
@@ -131,7 +139,11 @@ mod tests {
             (0.0, 20.0)
         }
 
-        fn get(&mut self) -> &mut Param {
+        fn get(&self) -> Param {
+            self.0
+        }
+
+        fn get_mut(&mut self) -> &mut Param {
             &mut self.0
         }
     }
@@ -182,7 +194,11 @@ mod tests {
             (0.0, 10.0)
         }
 
-        fn get(&mut self) -> &mut Param {
+        fn get(&self) -> Param {
+            self.0
+        }
+
+        fn get_mut(&mut self) -> &mut Param {
             &mut self.0
         }
     }
