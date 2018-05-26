@@ -11,7 +11,7 @@ use nphysics3d::object::ColliderHandle;
 use std::collections::HashMap;
 use std::env;
 
-use shapes::body_tree::serialise;
+use shapes::body_tree::{serialise, Population};
 use shapes::physics;
 
 fn new_node(window: &mut window::Window, object: &physics::ObjectShape) -> scene::SceneNode {
@@ -42,6 +42,7 @@ struct Renderer {
     window: window::Window,
     world: physics::World,
     objects: HashMap<ColliderHandle, scene::SceneNode>,
+    population: Population,
 }
 
 impl Renderer {
@@ -50,6 +51,7 @@ impl Renderer {
             window: window::Window::new("Simpletons"),
             world: physics::World::default(),
             objects: HashMap::new(),
+            population: Population::new(),
         }
     }
 
@@ -71,7 +73,45 @@ impl Renderer {
             for (i, mut tree) in pop.iter_mut().enumerate() {
                 let i = i as shapes::body_tree::Coord;
                 r.next_spawn_pos = Vector3::new(i * padding, 5.0, 0.0);
-                tree.mutate(0.5, 0.25);
+                tree.realise(&mut r);
+            }
+        }
+
+        // add objects from physics world to renderer
+        for (handle, _collider, obj) in self.world.objects() {
+            let node = new_node(&mut self.window, &obj.shape);
+            self.objects.insert(handle, node);
+        }
+
+        self.population = pop;
+    }
+
+    fn mutate_population(&mut self) {
+        const PADDING: f64 = 10.0;
+
+        // mutate
+        for mut tree in self.population.iter_mut() {
+            tree.mutate(0.2, 0.05);
+        }
+
+        // clear old population
+        {
+            self.world.clear();
+            for mut node in self.objects.values_mut() {
+                self.window.remove(&mut node);
+            }
+            self.objects.clear();
+        }
+
+        // add new population
+        {
+            let mut r = physics::PhysicalRealiser::new(&mut self.world);
+            for (i, mut tree) in self.population.iter_mut().enumerate() {
+                let i = i as shapes::body_tree::Coord;
+                r.next_spawn_pos = Vector3::new(i * PADDING, 5.0, 0.0);
+                if i == 1.0 {
+                    println!("{:?}", tree);
+                }
                 tree.realise(&mut r);
             }
         }
@@ -117,8 +157,12 @@ impl Renderer {
 
             // keyboard
             for mut e in self.window.events().iter() {
-                if let WindowEvent::Key(Key::Enter, _, Action::Press, _) = e.value {
-                    self.reset_population(&path);
+                if let WindowEvent::Key(key, _, Action::Press, _) = e.value {
+                    match key {
+                        Key::Enter => self.reset_population(&path),
+                        Key::Space => self.mutate_population(),
+                        _ => {}
+                    }
                 }
             }
         }
