@@ -1,5 +1,56 @@
 [
-	{ "tree": { "nodes": [ { "Cuboid": [ { "x": 1.5, "y": 2, "z": 1 }, { "x": 0, "y": 0, "z": 0 }, { "x": 2, "y": 0, "z": 0 } ] }, { "Cuboid": [ { "x": 1, "y": 3, "z": 0.1 }, { "x": 0, "y": 2, "z": 0 }, { "x": 1.2, "y": 2, "z": 5 } ] } ], "node_holes": [], "edge_property": "directed", "edges": [ [ 1, 0, { "src_connect": [ 0, 0, 0 ], "dst_connect": [ 0, 0, 0 ], "joint_type": "Fixed" } ] ] }, "root": 0 },
-	{ "tree": { "nodes": [ { "Cuboid": [ { "x": 0.5, "y": 2, "z": 0.2 }, { "x": 2, "y": 2, "z": -2 }, { "x": 2, "y": 0, "z": 0 } ] }, { "Cuboid": [ { "x": 1, "y": 5, "z": 0.1 }, { "x": 2, "y": 0, "z": 0 }, { "x": 1.2, "y": 2, "z": 5 } ] } ], "node_holes": [], "edge_property": "directed", "edges": [ [ 1, 0, { "src_connect": [ 0, 0, 0 ], "dst_connect": [ 0, 0, 0 ], "joint_type": "Fixed" } ] ] }, "root": 0 },
-	{ "tree": { "nodes": [ { "Cuboid": [ { "x": 0.2, "y": 1, "z": 2 }, { "x": 1, "y": 1, "z": 1 }, { "x": 3, "y": 3, "z": 1 } ] }, { "Cuboid": [ { "x": 2, "y": 1, "z": 0.6 }, { "x": 0, "y": 1, "z": 0 }, { "x": 1, "y": 0, "z": 1 } ] } ], "node_holes": [], "edge_property": "directed", "edges": [ [ 1, 0, { "src_connect": [ 0, 0, 0 ], "dst_connect": [ 0, 0, 0 ], "joint_type": "Fixed" } ] ] }, "root": 0 }
+  {
+    "tree": {
+      "nodes": [
+        {
+          "Cuboid": {
+            "dims": {
+              "x": 0.5,
+              "y": 2,
+              "z": 1
+            },
+            "pos": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rot": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        {
+          "Cuboid": {
+            "dims": {
+              "x": 1,
+              "y": 3,
+              "z": 0.1
+            },
+            "pos": {
+              "x": 0,
+              "y": 2,
+              "z": 0
+            },
+            "rot": {
+              "x": 1.2,
+              "y": 2,
+              "z": 1
+            }
+          }
+        }
+      ],
+      "node_holes": [],
+      "edge_property": "directed",
+      "edges": [
+        [
+          1,
+          0,
+          "Fixed"
+        ]
+      ]
+    },
+    "root": 0
+  }
 ]
