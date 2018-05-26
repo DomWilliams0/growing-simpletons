@@ -3,10 +3,13 @@ pub use petgraph::graph::NodeIndex;
 use petgraph::visit::{Dfs, EdgeRef};
 use rand::{self, Rng, RngCore};
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use body::def;
 use generic_mutation;
 
-type Node = def::ShapeDefinition;
+type Node = Rc<RefCell<def::ShapeDefinition>>;
 type Edge = def::Joint;
 type GraphSize = petgraph::graph::DefaultIx;
 type Tree = petgraph::Graph<Node, Edge, petgraph::Directed, GraphSize>;
@@ -57,7 +60,7 @@ impl BodyTree {
         let node = &self.tree[current];
 
         // create shape for self
-        let new_node = realiser.new_shape(node, parent_handle, parent_joint);
+        let new_node = realiser.new_shape(&node.borrow(), parent_handle, parent_joint);
 
         // children
         for edge_ref in self.get_children(current) {
@@ -151,7 +154,11 @@ mod tests {
     }
 
     fn shape() -> Node {
-        def::new_cuboid((5.0, 5.0, 5.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0))
+        Rc::new(RefCell::new(def::new_cuboid(
+            (5.0, 5.0, 5.0),
+            (0.0, 0.0, 0.0),
+            (0.0, 0.0, 0.0),
+        )))
     }
 
     fn joint() -> Edge {

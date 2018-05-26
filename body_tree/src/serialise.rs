@@ -28,18 +28,24 @@ fn serialise<W: Write>(writer: W, pop: &Population) {
 mod tests {
     use super::{deserialise, serialise};
     use body::def::*;
+    use std::cell::RefCell;
     use std::io::Cursor;
+    use std::rc::Rc;
     use tree::*;
 
     #[test]
     fn save_and_load() {
         let tree = {
             let root_shape = new_cuboid((0.5, 2.0, 1.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0));
-            let mut t = BodyTree::with_root(root_shape);
+            let mut t = BodyTree::with_root(Rc::new(RefCell::new(root_shape)));
             let root = t.root();
             t.add_child(
                 root,
-                new_cuboid((1.0, 3.0, 0.1), (0.0, 2.0, 0.0), (1.2, 2.0, 1.0)),
+                Rc::new(RefCell::new(new_cuboid(
+                    (1.0, 3.0, 0.1),
+                    (0.0, 2.0, 0.0),
+                    (1.2, 2.0, 1.0),
+                ))),
                 Joint::Fixed,
             );
             t
