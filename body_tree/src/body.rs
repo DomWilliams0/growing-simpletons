@@ -1,6 +1,6 @@
 pub mod def {
     use super::params::*;
-    use generic_mutation::ParamSet3d;
+    use generic_mutation::{ParamHolder, ParamSet3d, RangedParam};
 
     trait Shape {}
 
@@ -45,6 +45,21 @@ pub mod def {
         );
         ShapeDefinition::Cuboid {
             0: Cuboid { dims, pos, rot },
+        }
+    }
+
+    impl ParamHolder for Cuboid {
+        fn param_count(&self) -> usize {
+            self.dims.param_count() + self.pos.param_count() + self.rot.param_count()
+        }
+
+        fn get_param(&mut self, index: usize) -> &mut RangedParam {
+            match index {
+                0...2 => self.dims.get_param(index % 3),
+                3...5 => self.pos.get_param(index % 3),
+                6...8 => self.rot.get_param(index % 3),
+                _ => panic!("out of bounds"),
+            }
         }
     }
 }
