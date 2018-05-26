@@ -33,14 +33,14 @@ pub trait RangedParam {
 
     fn get_mut(&mut self) -> &mut Param;
 
-    fn update(&mut self, val: Param) {
+    fn get_scaled(&self) -> Param {
         let (min, max) = self.range();
-        *self.get_mut() = (max - min) * val + min;
+        (max - min) * self.get() + min
     }
 }
 
 /// Collection of related parameters in multiple dimensions.
-pub trait ParamSet<P: RangedParam>: ParamHolder {}
+pub trait ParamSet<P: RangedParam>: ParamHolder + Default { }
 
 #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[derive(Debug, Copy, Clone, Default)]
@@ -50,7 +50,7 @@ pub struct ParamSet3d<P: RangedParam> {
     z: P,
 }
 
-impl<P: RangedParam> ParamSet<P> for ParamSet3d<P> {}
+impl<P: RangedParam + Default> ParamSet<P> for ParamSet3d<P> {}
 
 impl<P: RangedParam> ParamHolder for ParamSet3d<P> {
     fn param_count(&self) -> usize {
@@ -70,8 +70,13 @@ impl<P: RangedParam> ParamSet3d<P> {
     pub fn new(x: P, y: P, z: P) -> Self {
         Self { x, y, z }
     }
-    pub fn components(&self) -> (Param, Param, Param) {
-        (self.x.get(), self.y.get(), self.z.get())
+
+    pub fn components_scaled(&self) -> (Param, Param, Param) {
+        (
+            self.x.get_scaled(),
+            self.y.get_scaled(),
+            self.z.get_scaled(),
+        )
     }
 }
 
@@ -100,11 +105,11 @@ impl<'a> AddAssign<Param> for &'a mut RangedParam {
                 val
             }
         };
-        self.update(clamped);
+        *self.get_mut() = clamped;
     }
 }
 
-pub fn mutate<P: ParamHolder, MG: MutationGen>(param_holder: ParamHolderRef<P>, mut mut_gen: MG) {
+pub fn mutate<P: ParamHolder, MG: MutationGen>(param_holder: ParamHolderRef<P>, mut_gen: &mut MG) {
     let params = GenericParams::new(param_holder);
 
     for i in 0..params.n {

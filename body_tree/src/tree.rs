@@ -1,6 +1,6 @@
 use petgraph;
 pub use petgraph::graph::NodeIndex;
-use petgraph::visit::{Dfs, EdgeRef};
+use petgraph::visit::EdgeRef;
 use rand::{self, Rng, RngCore};
 
 use std::cell::RefCell;
@@ -75,18 +75,18 @@ impl BodyTree {
         self.actually_recurse(self.root, handle, &joint, realiser);
     }
 
-    fn actually_mutate<MG: generic_mutation::MutationGen>(&mut self, mut _mut_gen: MG) {
-        let mut dfs = Dfs::new(&self.tree, self.root);
-        while let Some(_node) = dfs.next(&self.tree) {
-            // TODO mutate
+    fn actually_mutate<MG: generic_mutation::MutationGen>(&mut self, mut mut_gen: MG) {
+        for node in self.tree.node_weights_mut() {
+            generic_mutation::mutate(node.clone(), &mut mut_gen);
         }
     }
 
-    pub fn mutate(&mut self, mut_rate: f64) {
+    pub fn mutate(&mut self, mut_rate: f64, mut_max: f64) {
         let mut rng = rand::thread_rng();
         let mutator = RandomMutationGen {
             rng: &mut rng,
             rate: mut_rate,
+            max: mut_max,
         };
         self.actually_mutate(mutator)
     }
@@ -95,11 +95,17 @@ impl BodyTree {
 struct RandomMutationGen<'a> {
     rng: &'a mut RngCore,
     rate: f64,
+    max: f64,
 }
 
 impl<'a> generic_mutation::MutationGen for RandomMutationGen<'a> {
     fn gen(&mut self) -> generic_mutation::Param {
-        self.rng.gen()
+        let prob: f64 = self.rng.gen();
+        if prob < self.rate {
+            self.rng.gen_range(-self.max, self.max)
+        } else {
+            0.0
+        }
     }
 }
 

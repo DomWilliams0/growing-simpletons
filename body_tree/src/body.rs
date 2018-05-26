@@ -38,20 +38,30 @@ pub mod def {
             Rotation::new(rot.1),
             Rotation::new(rot.2),
         );
-        ShapeDefinition::Cuboid { dims, pos, rot }
+        ShapeDefinition::Cuboid {
+            dims,
+            pos,
+            rot,
+        }
     }
 
-    impl ParamHolder for Cuboid {
+    impl ParamHolder for ShapeDefinition {
         fn param_count(&self) -> usize {
-            self.dims.param_count() + self.pos.param_count() + self.rot.param_count()
+            match self {
+                ShapeDefinition::Cuboid { dims, pos, rot } => {
+                    dims.param_count() + pos.param_count() + rot.param_count()
+                }
+            }
         }
 
         fn get_param(&mut self, index: usize) -> &mut RangedParam {
-            match index {
-                0...2 => self.dims.get_param(index % 3),
-                3...5 => self.pos.get_param(index % 3),
-                6...8 => self.rot.get_param(index % 3),
-                _ => panic!("out of bounds"),
+            match self {
+                ShapeDefinition::Cuboid { dims, pos, rot } => match index {
+                    0...2 => dims.get_param(index % 3),
+                    3...5 => pos.get_param(index % 3),
+                    6...8 => rot.get_param(index % 3),
+                    _ => panic!("out of bounds"),
+                },
             }
         }
     }
@@ -61,15 +71,15 @@ pub mod params {
     use generic_mutation::{Param, RangedParam};
 
     /// x y z size of a cuboid;
-    #[derive(Debug, Clone, Copy, new, Serialize, Deserialize)]
+    #[derive(Debug, Default, Clone, Copy, new, Serialize, Deserialize)]
     pub struct Dimension(f64);
 
     /// x y z relative position to parent
-    #[derive(Debug, Clone, Copy, new, Serialize, Deserialize)]
+    #[derive(Debug, Default, Clone, Copy, new, Serialize, Deserialize)]
     pub struct RelativePos(f64);
 
     /// x y z rotation relative to parent
-    #[derive(Debug, Clone, Copy, new, Serialize, Deserialize)]
+    #[derive(Debug, Default, Clone, Copy, new, Serialize, Deserialize)]
     pub struct Rotation(f64);
 
     impl RangedParam for Dimension {

@@ -155,9 +155,9 @@ fn shape_from_def(
 ) -> (ShapeHandle<Coord>, Vector3<Coord>, Vector3<Coord>) {
     match definition {
         def::ShapeDefinition::Cuboid { dims, pos, rot } => {
-            let (w, h, d) = dims.components();
-            let (px, py, pz) = pos.components();
-            let (rx, ry, rz) = rot.components();
+            let (w, h, d) = dims.components_scaled();
+            let (px, py, pz) = pos.components_scaled();
+            let (rx, ry, rz) = rot.components_scaled();
             let cuboid = Cuboid::new(Vector3::new(w, h, d));
             (
                 ShapeHandle::new(cuboid),
@@ -242,7 +242,7 @@ impl ObjectShape {
     fn from_def(def: &def::ShapeDefinition) -> Self {
         match def {
             def::ShapeDefinition::Cuboid { dims, .. } => {
-                let (w, h, d) = dims.components();
+                let (w, h, d) = dims.components_scaled();
                 ObjectShape::Cuboid(Vector3::new(w, h, d))
             }
         }
