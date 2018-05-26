@@ -154,9 +154,7 @@ fn shape_from_def(
     definition: &def::ShapeDefinition,
 ) -> (ShapeHandle<Coord>, Vector3<Coord>, Vector3<Coord>) {
     match definition {
-        def::ShapeDefinition::Cuboid {
-            0: def::Cuboid { dims, pos, rot },
-        } => {
+        def::ShapeDefinition::Cuboid { dims, pos, rot } => {
             let (w, h, d) = dims.components();
             let (px, py, pz) = pos.components();
             let (rx, ry, rz) = rot.components();
@@ -243,9 +241,7 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
 impl ObjectShape {
     fn from_def(def: &def::ShapeDefinition) -> Self {
         match def {
-            def::ShapeDefinition::Cuboid {
-                0: def::Cuboid { dims, .. },
-            } => {
+            def::ShapeDefinition::Cuboid { dims, .. } => {
                 let (w, h, d) = dims.components();
                 ObjectShape::Cuboid(Vector3::new(w, h, d))
             }
