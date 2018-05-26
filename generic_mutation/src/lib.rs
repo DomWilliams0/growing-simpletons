@@ -13,7 +13,7 @@ pub struct GenericParams<PH: ParamHolder> {
 
 /// An entity with multiple parameters.
 pub trait ParamHolder {
-    const PARAM_COUNT: usize;
+    fn param_count(&self) -> usize;
     fn get_param(&mut self, index: usize) -> &mut RangedParam;
 }
 
@@ -38,7 +38,7 @@ pub trait MutationGen {
 
 impl<PH: ParamHolder> GenericParams<PH> {
     fn new(holder: Rc<RefCell<PH>>) -> Self {
-        let n = PH::PARAM_COUNT;
+        let n = holder.borrow().param_count();
         Self { owner: holder, n }
     }
 }
@@ -80,7 +80,9 @@ mod tests {
     }
 
     impl ParamHolder for TestHolder {
-        const PARAM_COUNT: usize = 1;
+        fn param_count(&self) -> usize {
+            1
+        }
 
         fn get_param(&mut self, index: usize) -> &mut RangedParam {
             match index {
