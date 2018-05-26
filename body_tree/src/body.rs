@@ -2,13 +2,18 @@ pub mod def {
     use super::params::*;
     use generic_mutation::ParamSet3d;
 
+    trait Shape {}
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct Cuboid {
+        pub dims: ParamSet3d<Dimension>,
+        pub pos: ParamSet3d<RelativePos>,
+        pub rot: ParamSet3d<Rotation>,
+    }
+
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum ShapeDefinition {
-        Cuboid {
-            dims: ParamSet3d<Dimension>,
-            pos: ParamSet3d<RelativePos>,
-            rot: ParamSet3d<Rotation>,
-        },
+        Cuboid(Cuboid),
     }
 
     #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -38,7 +43,9 @@ pub mod def {
             Rotation::new(rot.1),
             Rotation::new(rot.2),
         );
-        ShapeDefinition::Cuboid { dims, pos, rot }
+        ShapeDefinition::Cuboid {
+            0: Cuboid { dims, pos, rot },
+        }
     }
 }
 
