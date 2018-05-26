@@ -3,6 +3,9 @@
 extern crate nalgebra;
 extern crate ncollide3d;
 extern crate petgraph;
+extern crate rand;
+
+extern crate generic_mutation;
 
 extern crate serde;
 extern crate serde_json;

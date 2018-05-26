@@ -1,8 +1,10 @@
 use petgraph;
 pub use petgraph::graph::NodeIndex;
-use petgraph::visit::EdgeRef;
+use petgraph::visit::{Dfs, EdgeRef};
+use rand::{self, Rng, RngCore};
 
 use body;
+use generic_mutation;
 
 type Node = body::ShapeDefinition;
 type Edge = body::Joint;
@@ -68,6 +70,33 @@ impl BodyTree {
     pub fn realise<R: TreeRealiser>(&self, realiser: &mut R) {
         let (handle, joint) = realiser.root();
         self.actually_recurse(self.root, handle, &joint, realiser);
+    }
+
+    fn actually_mutate<MG: generic_mutation::MutationGen>(&mut self, mut _mut_gen: MG) {
+        let mut dfs = Dfs::new(&self.tree, self.root);
+        while let Some(_node) = dfs.next(&self.tree) {
+            // TODO mutate
+        }
+    }
+
+    pub fn mutate(&mut self, mut_rate: f64) {
+        let mut rng = rand::thread_rng();
+        let mutator = RandomMutationGen {
+            rng: &mut rng,
+            rate: mut_rate,
+        };
+        self.actually_mutate(mutator)
+    }
+}
+
+struct RandomMutationGen<'a> {
+    rng: &'a mut RngCore,
+    rate: f64,
+}
+
+impl<'a> generic_mutation::MutationGen for RandomMutationGen<'a> {
+    fn gen(&mut self) -> generic_mutation::Param {
+        self.rng.gen()
     }
 }
 
