@@ -1,4 +1,5 @@
-use nalgebra::{zero, Isometry3, Point3, UnitQuaternion, Vector3};
+use nalgebra::{zero, Isometry3, Point3, Translation, UnitQuaternion, Vector3};
+use ncollide3d::bounding_volume::{HasBoundingVolume, AABB};
 use ncollide3d::shape::{Cuboid, ShapeHandle};
 use nphysics3d::joint::{FixedJoint, FreeJoint, Joint};
 use nphysics3d::object::{Body, BodyHandle, Collider, ColliderHandle, Material};
@@ -164,7 +165,7 @@ impl<'w> PhysicalRealiser<'w> {
 fn position_on_face(
     face_index: u32,
     face_coords: (Coord, Coord),
-    my_dims: &Vector3<Coord>,
+    my_dims: &Point3<Coord>,
     parent_dims: &Vector3<Coord>,
 ) -> Vector3<Coord> {
     let (f1, f2) = face_coords;
@@ -173,23 +174,23 @@ fn position_on_face(
         // top/bottom
         0 => Vector3::new(
             f1 * parent_dims.x,
-            -(parent_dims.y / 2.0 + my_dims.y),
+            -(parent_dims.y / 2.0 - my_dims.y / 2.0),
             f2 * parent_dims.z,
         ),
         1 => Vector3::new(
             f1 * parent_dims.x,
-            parent_dims.y / 2.0 + my_dims.y,
+            parent_dims.y / 2.0 - my_dims.y / 2.0,
             f2 * parent_dims.z,
         ),
 
         // back/front
         2 => Vector3::new(
-            -(parent_dims.x / 2.0 + my_dims.x),
+            -(parent_dims.x / 2.0 + my_dims.x / 2.0),
             f1 * parent_dims.y,
             f2 * parent_dims.z,
         ),
         3 => Vector3::new(
-            parent_dims.x / 2.0 + my_dims.x,
+            parent_dims.x / 2.0 + my_dims.x / 2.0,
             f1 * parent_dims.y,
             f2 * parent_dims.z,
         ),
@@ -198,12 +199,12 @@ fn position_on_face(
         4 => Vector3::new(
             f1 * parent_dims.x,
             f2 * parent_dims.y,
-            parent_dims.z / 2.0 + my_dims.z,
+            parent_dims.z / 2.0 + my_dims.z / 2.0,
         ),
         5 => Vector3::new(
             f1 * parent_dims.x,
             f2 * parent_dims.y,
-            -(parent_dims.z / 2.0 + my_dims.z),
+            -(parent_dims.z / 2.0 + my_dims.z / 2.0),
         ),
 
         _ => panic!(format!("bad face index {}", face_index)),
@@ -221,6 +222,16 @@ fn shape_from_def(
             let (rx, ry, rz) = rot.components_scaled();
             let cuboid = Cuboid::new(Vector3::new(w, h, d));
 
+            let my_size = {
+                let aabb: AABB<Coord> = cuboid.bounding_volume(&Isometry3::from_parts(
+                    Translation::identity(),
+                    UnitQuaternion::from_euler_angles(rx, ry, rz),
+                ));
+                let mins = aabb.mins();
+                let maxs = aabb.maxs();
+                Point3::new(maxs.x - mins.x, maxs.y - mins.y, maxs.z - mins.z)
+            };
+
             let offset = match parent_shape {
                 ObjectShape::Plane(_, _, _) => Vector3::identity(),
                 ObjectShape::Cuboid(parent_dims) => {
@@ -231,8 +242,8 @@ fn shape_from_def(
                     position_on_face(
                         face,
                         (face_1.get_scaled(), face_2.get_scaled()),
-                        &Vector3::new(w, h, d),
-                        parent_dims,
+                        &my_size,
+                        &parent_dims,
                     )
                 }
             };
