@@ -227,17 +227,13 @@ fn shape_from_def(
                     use body_tree::body::def::RangedParam; // ooer
 
                     const FACE_COUNT: f64 = 6.0;
-                    let face = (face_idx.get() * (FACE_COUNT + 1.0)).min(6.0) as u32;
-
-                    match face {
-                        // TODO other faces
-                        0 => Vector3::new(
-                            face_1.get() * parent_dims.x,
-                            -(parent_dims.y / 2.0 + h),
-                            face_2.get() * parent_dims.z,
-                        ),
-                        _ => unimplemented!("bad face"),
-                    }
+                    let face = (face_idx.get() * FACE_COUNT).min(FACE_COUNT - 1.0) as u32;
+                    position_on_face(
+                        face,
+                        (face_1.get_scaled(), face_2.get_scaled()),
+                        &Vector3::new(w, h, d),
+                        parent_dims,
+                    )
                 }
             };
 
