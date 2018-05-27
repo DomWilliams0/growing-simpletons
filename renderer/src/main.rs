@@ -72,7 +72,7 @@ impl Renderer {
             let mut r = physics::PhysicalRealiser::new(&mut self.world);
             for (i, mut tree) in pop.iter_mut().enumerate() {
                 let i = i as shapes::body_tree::Coord;
-                r.next_spawn_pos = Vector3::new(i * padding, 5.0, 0.0);
+                r.next_spawn_pos.x += padding;
                 tree.realise(&mut r);
             }
         }

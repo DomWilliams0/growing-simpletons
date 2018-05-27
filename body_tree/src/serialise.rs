@@ -57,6 +57,7 @@ mod tests {
 
         let _serialised = serialise(&mut cursor, &pop);
         cursor.set_position(0);
+        println!("{}", String::from_utf8(cursor.get_ref().to_vec()).unwrap());
         let deserialised = deserialise(&mut cursor);
 
         assert_eq!(pop.len(), deserialised.len());

@@ -27,7 +27,9 @@ pub trait ParamHolder {
 /// An individual parameter with a specified range.
 pub trait RangedParam {
     /// (min, max)
-    fn range(&self) -> (Param, Param);
+    fn range(&self) -> (Param, Param) {
+        (0.0, 1.0) // unscaled
+    }
 
     fn get(&self) -> Param;
 

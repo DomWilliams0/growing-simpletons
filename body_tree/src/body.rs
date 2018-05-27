@@ -1,12 +1,12 @@
 pub mod def {
     use super::params::*;
-    use generic_mutation::{ParamHolder, ParamSet3d, RangedParam};
+    pub use generic_mutation::{ParamHolder, ParamSet3d, RangedParam};
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum ShapeDefinition {
         Cuboid {
             dims: ParamSet3d<Dimension>,
-            pos: ParamSet3d<RelativePos>,
+            pos: (FaceIndex, FaceCoord, FaceCoord),
             rot: ParamSet3d<Rotation>,
         },
     }
@@ -28,11 +28,12 @@ pub mod def {
             Dimension::new(dims.1),
             Dimension::new(dims.2),
         );
-        let pos = ParamSet3d::new(
-            RelativePos::new(pos.0),
-            RelativePos::new(pos.1),
-            RelativePos::new(pos.2),
+        let pos = (
+            FaceIndex::new(pos.0),
+            FaceCoord::new(pos.1),
+            FaceCoord::new(pos.2),
         );
+
         let rot = ParamSet3d::new(
             Rotation::new(rot.0),
             Rotation::new(rot.1),
@@ -44,8 +45,8 @@ pub mod def {
     impl ParamHolder for ShapeDefinition {
         fn param_count(&self) -> usize {
             match self {
-                ShapeDefinition::Cuboid { dims, pos, rot } => {
-                    dims.param_count() + pos.param_count() + rot.param_count()
+                ShapeDefinition::Cuboid { dims, rot, .. } => {
+                    dims.param_count() + 3 + rot.param_count()
                 }
             }
         }
@@ -54,7 +55,9 @@ pub mod def {
             match self {
                 ShapeDefinition::Cuboid { dims, pos, rot } => match index {
                     0...2 => dims.get_param(index % 3),
-                    3...5 => pos.get_param(index % 3),
+                    3 => &mut pos.0,
+                    4 => &mut pos.1,
+                    5 => &mut pos.2,
                     6...8 => rot.get_param(index % 3),
                     _ => panic!("out of bounds"),
                 },
@@ -66,13 +69,18 @@ pub mod def {
 pub mod params {
     use generic_mutation::{Param, RangedParam};
 
-    /// x y z size of a cuboid;
+    /// x y z size of a cuboid
     #[derive(Debug, Default, Clone, Copy, new, Serialize, Deserialize)]
     pub struct Dimension(f64);
 
-    /// x y z relative position to parent
+    // (x, y) on the parent cuboid
+    // TODO generalise for sphere too?
     #[derive(Debug, Default, Clone, Copy, new, Serialize, Deserialize)]
-    pub struct RelativePos(f64);
+    pub struct FaceCoord(f64);
+
+    // face index, unscaled here
+    #[derive(Debug, Default, Clone, Copy, new, Serialize, Deserialize)]
+    pub struct FaceIndex(f64);
 
     /// x y z rotation relative to parent
     #[derive(Debug, Default, Clone, Copy, new, Serialize, Deserialize)]
@@ -92,11 +100,21 @@ pub mod params {
         }
     }
 
-    impl RangedParam for RelativePos {
+    impl RangedParam for FaceCoord {
         fn range(&self) -> (Param, Param) {
-            (0.0, 4.0) // TODO depends on parent and own dimensions!
+            (-1.0, 1.0)
         }
 
+        fn get(&self) -> Param {
+            self.0
+        }
+
+        fn get_mut(&mut self) -> &mut Param {
+            &mut self.0
+        }
+    }
+
+    impl RangedParam for FaceIndex {
         fn get(&self) -> Param {
             self.0
         }

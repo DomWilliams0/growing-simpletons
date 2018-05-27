@@ -24,7 +24,7 @@ const COLOUR_GROUND: Colour = Colour {
     b: 0.1,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum ObjectShape {
     Cuboid(Vector3<Coord>),
     Plane(Point3<Coord>, Vector3<Coord>, Coord),
@@ -39,6 +39,7 @@ pub struct WorldObject {
 pub struct World {
     physics: world::World<Coord>,
     objects: Vec<(ColliderHandle, WorldObject)>,
+    ground_collider: Option<ColliderHandle>,
 }
 
 impl WorldObject {
@@ -54,6 +55,7 @@ impl Default for World {
         Self {
             physics: world,
             objects: Vec::new(),
+            ground_collider: None,
         }
     }
 }
@@ -91,6 +93,13 @@ impl World {
         })
     }
 
+    fn shape(&self, ch: ColliderHandle) -> Option<ObjectShape> {
+        self.objects
+            .iter()
+            .find(|(x, _)| x.uid() == ch.uid())
+            .map(|tup| tup.1.shape)
+    }
+
     pub fn tick(&mut self) {
         self.physics.step();
     }
@@ -114,6 +123,7 @@ impl World {
             ObjectShape::Plane(Point3::new(0.0, 0.0, 0.0), Vector3::y(), ground_size),
             COLOUR_GROUND,
         );
+        self.ground_collider = Some(ground);
         self.register_created_object(ground, ground_obj);
     }
 
@@ -127,6 +137,7 @@ impl World {
             };
             self.physics.remove_bodies(&[bh]);
         }
+        self.ground_collider = None;
         self.objects.clear();
 
         // rather awful
@@ -144,7 +155,7 @@ impl<'w> PhysicalRealiser<'w> {
     pub fn new(world: &'w mut World) -> Self {
         Self {
             world,
-            next_spawn_pos: Vector3::new(0.0, 5.0, 0.0),
+            next_spawn_pos: Vector3::new(0.0, 10.0, 0.0),
             random: rand::thread_rng(),
         }
     }
@@ -152,24 +163,42 @@ impl<'w> PhysicalRealiser<'w> {
 
 fn shape_from_def(
     definition: &def::ShapeDefinition,
+    parent_shape: &ObjectShape,
 ) -> (ShapeHandle<Coord>, Vector3<Coord>, Vector3<Coord>) {
     match definition {
         def::ShapeDefinition::Cuboid { dims, pos, rot } => {
             let (w, h, d) = dims.components_scaled();
-            let (px, py, pz) = pos.components_scaled();
+            let (face_idx, face_1, face_2) = pos;
             let (rx, ry, rz) = rot.components_scaled();
             let cuboid = Cuboid::new(Vector3::new(w, h, d));
-            (
-                ShapeHandle::new(cuboid),
-                Vector3::new(px, py, pz),
-                Vector3::new(rx, ry, rz),
-            )
+
+            let offset = match parent_shape {
+                ObjectShape::Plane(_, _, _) => Vector3::identity(),
+                ObjectShape::Cuboid(parent_dims) => {
+                    use body_tree::body::def::RangedParam; // ooer
+
+                    const FACE_COUNT: f64 = 6.0;
+                    let face = (face_idx.get() * (FACE_COUNT + 1.0)).min(6.0) as u32;
+
+                    match face {
+                        // TODO other faces
+                        0 => Vector3::new(
+                            face_1.get() * parent_dims.x,
+                            -(parent_dims.y / 2.0 + h),
+                            face_2.get() * parent_dims.z,
+                        ),
+                        _ => unimplemented!("bad face"),
+                    }
+                }
+            };
+
+            (ShapeHandle::new(cuboid), offset, Vector3::new(rx, ry, rz))
         }
     }
 }
 
 impl<'w> TreeRealiser for PhysicalRealiser<'w> {
-    type RealisedHandle = BodyHandle;
+    type RealisedHandle = (ColliderHandle, BodyHandle);
 
     fn new_shape(
         &mut self,
@@ -191,16 +220,19 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
                 .add_multibody_link(parent, joint, zero(), zero(), inertia, com)
         }
 
-        // get parent global position
-        let parent_pos = {
-            match self.world.physics.multibody_link(parent) {
-                Some(link) => link.position(),
-                None => Isometry3::new(self.next_spawn_pos, zero()), // spawn position of full entity
-            }
-        };
+        let (parent_ch, parent_body) = parent;
+        let parent_shape = self.world.shape(parent_ch).expect("Parent has no collider");
 
         // get parameters from shape definition
-        let (body_shape, rel_pos, rotation) = shape_from_def(shape_def);
+        let (body_shape, rel_pos, rotation) = shape_from_def(&shape_def, &parent_shape);
+
+        // get parent global position
+        let parent_pos = {
+            match self.world.physics.multibody_link(parent_body) {
+                Some(link) => link.position(),
+                None => Isometry3::new(self.next_spawn_pos, rotation), // spawn position of full entity
+            }
+        };
 
         // parse parameters
         let joint_params = {
@@ -208,13 +240,17 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
             shift.append_rotation_mut(&UnitQuaternion::new(rotation));
             shift
         };
+
         let link = match parent_joint {
-            def::Joint::Ground => {
-                add_link(self.world, parent, FreeJoint::new(parent_pos), &body_shape)
-            }
+            def::Joint::Ground => add_link(
+                self.world,
+                parent_body,
+                FreeJoint::new(parent_pos),
+                &body_shape,
+            ),
             def::Joint::Fixed => add_link(
                 self.world,
-                parent,
+                parent_body,
                 FixedJoint::new(joint_params),
                 &body_shape,
             ),
@@ -230,11 +266,18 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
 
         self.world
             .register_object(collider, shape_def, Colour::random(&mut self.random));
-        link
+
+        (collider, link)
     }
 
     fn root(&self) -> (Self::RealisedHandle, def::Joint) {
-        (BodyHandle::ground(), def::Joint::Ground)
+        (
+            (
+                self.world.ground_collider.expect("Ground required"),
+                BodyHandle::ground(),
+            ),
+            def::Joint::Ground,
+        )
     }
 }
 
