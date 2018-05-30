@@ -14,6 +14,7 @@ pub mod def {
     #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
     pub enum Joint {
         Fixed,
+        Rotational { torque: Torque, max_speed: MaxSpeed },
         Ground,
     }
 
@@ -86,6 +87,14 @@ pub mod params {
     #[derive(Debug, Default, Clone, Copy, new, Serialize, Deserialize)]
     pub struct Rotation(f64);
 
+    // motor acceleration
+    #[derive(Debug, Default, Clone, Copy, new, Serialize, Deserialize)]
+    pub struct Torque(f64);
+
+    // motor max speed
+    #[derive(Debug, Default, Clone, Copy, new, Serialize, Deserialize)]
+    pub struct MaxSpeed(f64);
+
     impl RangedParam for Dimension {
         fn range(&self) -> (Param, Param) {
             (0.1, 4.0)
@@ -138,4 +147,31 @@ pub mod params {
         }
     }
 
+    impl RangedParam for MaxSpeed {
+        fn range(&self) -> (Param, Param) {
+            (1.0, 10.0)
+        }
+
+        fn get(&self) -> Param {
+            self.0
+        }
+
+        fn get_mut(&mut self) -> &mut Param {
+            &mut self.0
+        }
+    }
+
+    impl RangedParam for Torque {
+        fn range(&self) -> (Param, Param) {
+            (2.0, 5.0)
+        }
+
+        fn get(&self) -> Param {
+            self.0
+        }
+
+        fn get_mut(&mut self) -> &mut Param {
+            &mut self.0
+        }
+    }
 }

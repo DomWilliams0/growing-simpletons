@@ -47,7 +47,12 @@
         [
           1,
           0,
-          "Fixed"
+          {
+            "Rotational": {
+              "torque": 1.0,
+              "max_speed": 1.1
+            }
+          }
         ]
       ]
     },

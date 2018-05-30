@@ -60,10 +60,10 @@ impl Renderer {
     }
 
     fn reset_population<P: Into<::std::path::PathBuf>>(&mut self, path: P) {
-        //let mut pop = serialise::load(path);
-        let mut pop: Population = (0..POP_SIZE)
-            .map(|_| tree::grow_random_tree(TREE_DEPTH))
-            .collect();
+        let mut pop = serialise::load(path);
+        //let mut pop: Population = (0..POP_SIZE)
+        //    .map(|_| tree::grow_random_tree(TREE_DEPTH))
+        //    .collect();
 
         // clear old population
         {
@@ -76,7 +76,7 @@ impl Renderer {
         // add new population
         {
             let mut r = physics::PhysicalRealiser::new(&mut self.world);
-            r.next_spawn_pos.x -= SPACING * (POP_SIZE as f64) / 2.0;
+            r.next_spawn_pos.x -= SPACING * (pop.len() as f64) / 2.0;
             for (i, mut tree) in pop.iter_mut().enumerate() {
                 let i = i as shapes::body_tree::Coord;
                 r.next_spawn_pos.x += SPACING;

@@ -1,12 +1,13 @@
 use nalgebra::{zero, Isometry3, Point3, Translation, UnitQuaternion, Vector3};
 use ncollide3d::bounding_volume::{HasBoundingVolume, AABB};
 use ncollide3d::shape::{Cuboid, ShapeHandle};
-use nphysics3d::joint::{FixedJoint, FreeJoint, Joint};
+use nphysics3d::joint::{FixedJoint, FreeJoint, Joint, RevoluteJoint};
 use nphysics3d::object::{Body, BodyHandle, Collider, ColliderHandle, Material};
 use nphysics3d::volumetric::Volumetric;
 use nphysics3d::world;
 use rand::{self, Rng};
 
+use body_tree::body::def::RangedParam;
 use body_tree::tree::TreeRealiser;
 use body_tree::{body::def, Coord};
 
@@ -245,14 +246,20 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
         fn add_link<J: Joint<Coord>>(
             world: &mut World,
             parent: BodyHandle,
+            offset: Isometry3<Coord>,
             joint: J,
             shape: &ShapeHandle<Coord>,
         ) -> BodyHandle {
             let inertia = shape.inertia(1.0);
             let com = shape.center_of_mass();
-            world
-                .physics
-                .add_multibody_link(parent, joint, zero(), zero(), inertia, com)
+            world.physics.add_multibody_link(
+                parent,
+                joint,
+                offset.translation.vector,
+                zero(),
+                inertia,
+                com,
+            )
         }
 
         let (parent_ch, parent_body) = parent;
@@ -280,15 +287,27 @@ impl<'w> TreeRealiser for PhysicalRealiser<'w> {
             def::Joint::Ground => add_link(
                 self.world,
                 parent_body,
+                Isometry3::identity(),
                 FreeJoint::new(parent_pos),
                 &body_shape,
             ),
             def::Joint::Fixed => add_link(
                 self.world,
                 parent_body,
+                Isometry3::identity(),
                 FixedJoint::new(joint_params),
                 &body_shape,
             ),
+            def::Joint::Rotational { torque, max_speed } => {
+                let mut rev = RevoluteJoint::new(Vector3::x_axis(), 0.0);
+                rev.enable_angular_motor();
+                rev.set_desired_angular_motor_velocity(max_speed.get_scaled());
+                rev.set_max_angular_motor_torque(torque.get_scaled());
+                rev.disable_min_angle();
+                rev.disable_max_angle();
+
+                add_link(self.world, parent_body, joint_params, rev, &body_shape)
+            }
         };
 
         let collider = self.world.physics.add_collider(

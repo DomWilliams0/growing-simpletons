@@ -28,6 +28,7 @@ fn serialise<W: Write>(writer: W, pop: &Population) {
 mod tests {
     use super::{deserialise, serialise};
     use body::def::*;
+    use body::params::*;
     use std::cell::RefCell;
     use std::io::Cursor;
     use std::rc::Rc;
@@ -46,7 +47,10 @@ mod tests {
                     (0.0, 2.0, 0.0),
                     (1.2, 2.0, 1.0),
                 ))),
-                Joint::Fixed,
+                Joint::Rotational {
+                    max_speed: MaxSpeed::new(0.8),
+                    torque: Torque::new(0.8),
+                },
             );
             t
         };
