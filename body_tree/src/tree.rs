@@ -9,6 +9,8 @@ use std::rc::Rc;
 use body::def;
 use generic_mutation;
 
+pub use self::gen::grow_random_tree;
+
 type Node = Rc<RefCell<def::ShapeDefinition>>;
 type Edge = def::Joint;
 type GraphSize = petgraph::graph::DefaultIx;
@@ -120,6 +122,44 @@ pub trait TreeRealiser {
     ) -> Self::RealisedHandle;
 
     fn root(&self) -> (Self::RealisedHandle, def::Joint);
+}
+
+mod gen {
+    use rand::{self, Rng};
+    use super::super::Coord;
+    use super::*;
+
+    fn gen() -> Coord { rand::thread_rng().gen() }
+
+    fn random_node() -> Node {
+        let shape = def::new_cuboid(
+            (0.04, 0.7, 0.04), // prefer sticks
+            (gen(), gen(), gen()),
+            (gen(), gen(), gen())
+            );
+        Rc::new(RefCell::new(shape))
+    }
+
+    fn random_edge() -> Edge {def::Joint::Fixed}
+
+    fn recurse(tree: &mut BodyTree, current: NodeIndex, depth: usize) {
+        const MAX_CHILDREN: usize = 2; // no idea why
+        if depth > 0 {
+            let child_count = rand::thread_rng().gen_range(1, MAX_CHILDREN);
+            for _ in 0..child_count {
+                let child = tree.add_child(current, random_node(), random_edge());
+                recurse(tree, child, depth-1);
+            }
+        }
+    }
+
+    pub fn grow_random_tree(max_depth: usize) -> BodyTree {
+        let root = random_node();
+        let mut tree = BodyTree::with_root(root);
+        let root = tree.root();
+        recurse(&mut tree, root, max_depth);
+        tree
+    }
 }
 
 #[cfg(test)]

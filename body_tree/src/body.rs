@@ -88,7 +88,7 @@ pub mod params {
 
     impl RangedParam for Dimension {
         fn range(&self) -> (Param, Param) {
-            (0.1, 10.0)
+            (0.1, 4.0)
         }
 
         fn get(&self) -> Param {

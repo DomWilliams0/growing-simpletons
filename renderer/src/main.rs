@@ -11,7 +11,7 @@ use nphysics3d::object::ColliderHandle;
 use std::collections::HashMap;
 use std::env;
 
-use shapes::body_tree::{serialise, Population};
+use shapes::body_tree::{serialise, tree, Population};
 use shapes::physics;
 
 fn new_node(window: &mut window::Window, object: &physics::ObjectShape) -> scene::SceneNode {
@@ -56,7 +56,8 @@ impl Renderer {
     }
 
     fn reset_population<P: Into<::std::path::PathBuf>>(&mut self, path: P) {
-        let mut pop = serialise::load(path);
+        //let mut pop = serialise::load(path);
+        let mut pop = vec![tree::grow_random_tree(8)];
         let padding = 10.0;
 
         // clear old population

@@ -170,41 +170,46 @@ fn position_on_face(
 ) -> Vector3<Coord> {
     let (f1, f2) = face_coords;
 
+    // hopefully this prevents connected shapes not physically touching
+    let nx = parent_dims.x.min(my_dims.x);
+    let ny = parent_dims.y.min(my_dims.y);
+    let nz = parent_dims.z.min(my_dims.z);
+
     match face_index {
         // top/bottom
         0 => Vector3::new(
-            f1 * parent_dims.x,
+            f1 * nx,
             -(parent_dims.y / 2.0 - my_dims.y / 2.0),
-            f2 * parent_dims.z,
+            f2 * nz,
         ),
         1 => Vector3::new(
-            f1 * parent_dims.x,
+            f1 * nx,
             parent_dims.y / 2.0 - my_dims.y / 2.0,
-            f2 * parent_dims.z,
+            f2 * nz,
         ),
 
         // back/front
         2 => Vector3::new(
-            -(parent_dims.x / 2.0 + my_dims.x / 2.0),
-            f1 * parent_dims.y,
-            f2 * parent_dims.z,
+            -(parent_dims.x / 2.0 - my_dims.x / 2.0),
+            f1 * ny,
+            f2 * nz,
         ),
         3 => Vector3::new(
-            parent_dims.x / 2.0 + my_dims.x / 2.0,
-            f1 * parent_dims.y,
-            f2 * parent_dims.z,
+            parent_dims.x / 2.0 - my_dims.x / 2.0,
+            f1 * ny,
+            f2 * nz,
         ),
 
         // left/right
         4 => Vector3::new(
-            f1 * parent_dims.x,
-            f2 * parent_dims.y,
-            parent_dims.z / 2.0 + my_dims.z / 2.0,
+            f1 * nx,
+            f2 * ny,
+            parent_dims.z / 2.0 - my_dims.z / 2.0,
         ),
         5 => Vector3::new(
-            f1 * parent_dims.x,
-            f2 * parent_dims.y,
-            -(parent_dims.z / 2.0 + my_dims.z / 2.0),
+            f1 * nx,
+            f2 * ny,
+            -(parent_dims.z / 2.0 - my_dims.z / 2.0),
         ),
 
         _ => panic!(format!("bad face index {}", face_index)),
@@ -227,9 +232,7 @@ fn shape_from_def(
                     Translation::identity(),
                     UnitQuaternion::from_euler_angles(rx, ry, rz),
                 ));
-                let mins = aabb.mins();
-                let maxs = aabb.maxs();
-                Point3::new(maxs.x - mins.x, maxs.y - mins.y, maxs.z - mins.z)
+                aabb.maxs().clone()
             };
 
             let offset = match parent_shape {
