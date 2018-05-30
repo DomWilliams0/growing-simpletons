@@ -177,40 +177,16 @@ fn position_on_face(
 
     match face_index {
         // top/bottom
-        0 => Vector3::new(
-            f1 * nx,
-            -(parent_dims.y / 2.0 - my_dims.y / 2.0),
-            f2 * nz,
-        ),
-        1 => Vector3::new(
-            f1 * nx,
-            parent_dims.y / 2.0 - my_dims.y / 2.0,
-            f2 * nz,
-        ),
+        0 => Vector3::new(f1 * nx, -(parent_dims.y / 2.0 - my_dims.y / 2.0), f2 * nz),
+        1 => Vector3::new(f1 * nx, parent_dims.y / 2.0 - my_dims.y / 2.0, f2 * nz),
 
         // back/front
-        2 => Vector3::new(
-            -(parent_dims.x / 2.0 - my_dims.x / 2.0),
-            f1 * ny,
-            f2 * nz,
-        ),
-        3 => Vector3::new(
-            parent_dims.x / 2.0 - my_dims.x / 2.0,
-            f1 * ny,
-            f2 * nz,
-        ),
+        2 => Vector3::new(-(parent_dims.x / 2.0 - my_dims.x / 2.0), f1 * ny, f2 * nz),
+        3 => Vector3::new(parent_dims.x / 2.0 - my_dims.x / 2.0, f1 * ny, f2 * nz),
 
         // left/right
-        4 => Vector3::new(
-            f1 * nx,
-            f2 * ny,
-            parent_dims.z / 2.0 - my_dims.z / 2.0,
-        ),
-        5 => Vector3::new(
-            f1 * nx,
-            f2 * ny,
-            -(parent_dims.z / 2.0 - my_dims.z / 2.0),
-        ),
+        4 => Vector3::new(f1 * nx, f2 * ny, parent_dims.z / 2.0 - my_dims.z / 2.0),
+        5 => Vector3::new(f1 * nx, f2 * ny, -(parent_dims.z / 2.0 - my_dims.z / 2.0)),
 
         _ => panic!(format!("bad face index {}", face_index)),
     }
@@ -232,7 +208,7 @@ fn shape_from_def(
                     Translation::identity(),
                     UnitQuaternion::from_euler_angles(rx, ry, rz),
                 ));
-                aabb.maxs().clone()
+                *aabb.maxs()
             };
 
             let offset = match parent_shape {

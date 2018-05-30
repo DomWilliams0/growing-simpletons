@@ -125,30 +125,34 @@ pub trait TreeRealiser {
 }
 
 mod gen {
-    use rand::{self, Rng};
     use super::super::Coord;
     use super::*;
+    use rand::{self, Rng};
 
-    fn gen() -> Coord { rand::thread_rng().gen() }
+    fn gen() -> Coord {
+        rand::thread_rng().gen()
+    }
 
     fn random_node() -> Node {
         let shape = def::new_cuboid(
             (0.04, 0.7, 0.04), // prefer sticks
             (gen(), gen(), gen()),
-            (gen(), gen(), gen())
-            );
+            (gen(), gen(), gen()),
+        );
         Rc::new(RefCell::new(shape))
     }
 
-    fn random_edge() -> Edge {def::Joint::Fixed}
+    fn random_edge() -> Edge {
+        def::Joint::Fixed
+    }
 
     fn recurse(tree: &mut BodyTree, current: NodeIndex, depth: usize) {
-        const MAX_CHILDREN: usize = 2; // no idea why
+        const MAX_CHILDREN: usize = 3;
         if depth > 0 {
-            let child_count = rand::thread_rng().gen_range(1, MAX_CHILDREN);
+            let child_count = rand::thread_rng().gen_range(0, MAX_CHILDREN);
             for _ in 0..child_count {
                 let child = tree.add_child(current, random_node(), random_edge());
-                recurse(tree, child, depth-1);
+                recurse(tree, child, depth - 1);
             }
         }
     }
