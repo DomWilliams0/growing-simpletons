@@ -46,8 +46,8 @@ struct Renderer {
 }
 
 const SPACING: f64 = 10.0;
-const POP_SIZE: usize = 6;
-const TREE_DEPTH: usize = 4;
+const POP_SIZE: usize = 3;
+const TREE_DEPTH: usize = 3;
 
 impl Renderer {
     fn new() -> Self {
@@ -60,10 +60,15 @@ impl Renderer {
     }
 
     fn reset_population<P: Into<::std::path::PathBuf>>(&mut self, path: P) {
-        let mut pop = serialise::load(path);
-        //let mut pop: Population = (0..POP_SIZE)
-        //    .map(|_| tree::grow_random_tree(TREE_DEPTH))
-        //    .collect();
+        const LOAD: bool = false;
+
+        let mut pop = if LOAD {
+            serialise::load(path)
+        } else {
+            (0..POP_SIZE)
+                .map(|_| tree::grow_random_tree(TREE_DEPTH))
+                .collect()
+        };
 
         // clear old population
         {

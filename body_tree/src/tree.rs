@@ -128,6 +128,7 @@ mod gen {
     use super::super::Coord;
     use super::*;
     use rand::{self, Rng};
+    use body::params;
 
     fn gen() -> Coord {
         rand::thread_rng().gen()
@@ -143,7 +144,11 @@ mod gen {
     }
 
     fn random_edge() -> Edge {
+        if gen() < 0.5 {
         def::Joint::Fixed
+        } else {
+            def::Joint::Rotational{torque: params::Torque::new(gen()), max_speed:params::MaxSpeed::new(gen())}
+    }
     }
 
     fn recurse(tree: &mut BodyTree, current: NodeIndex, depth: usize) {
