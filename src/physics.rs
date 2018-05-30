@@ -107,7 +107,7 @@ impl World {
 
     fn add_ground(&mut self) {
         let material = Material::default();
-        let ground_size = 50.0;
+        let ground_size = 100.0;
         let ground_shape =
             ShapeHandle::new(Cuboid::new(Vector3::repeat(ground_size - COLLIDER_MARGIN)));
         let ground_pos = Isometry3::new(Vector3::y() * -ground_size, zero());

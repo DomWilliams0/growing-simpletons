@@ -45,6 +45,10 @@ struct Renderer {
     population: Population,
 }
 
+const SPACING: f64 = 10.0;
+const POP_SIZE: usize = 6;
+const TREE_DEPTH: usize = 4;
+
 impl Renderer {
     fn new() -> Self {
         Self {
@@ -57,8 +61,9 @@ impl Renderer {
 
     fn reset_population<P: Into<::std::path::PathBuf>>(&mut self, path: P) {
         //let mut pop = serialise::load(path);
-        let mut pop = vec![tree::grow_random_tree(8)];
-        let padding = 10.0;
+        let mut pop: Population = (0..POP_SIZE)
+            .map(|_| tree::grow_random_tree(TREE_DEPTH))
+            .collect();
 
         // clear old population
         {
@@ -71,9 +76,10 @@ impl Renderer {
         // add new population
         {
             let mut r = physics::PhysicalRealiser::new(&mut self.world);
+            r.next_spawn_pos.x -= SPACING * (POP_SIZE as f64) / 2.0;
             for (i, mut tree) in pop.iter_mut().enumerate() {
                 let i = i as shapes::body_tree::Coord;
-                r.next_spawn_pos.x += padding;
+                r.next_spawn_pos.x += SPACING;
                 tree.realise(&mut r);
             }
         }
@@ -88,8 +94,6 @@ impl Renderer {
     }
 
     fn mutate_population(&mut self) {
-        const PADDING: f64 = 10.0;
-
         // mutate
         for mut tree in self.population.iter_mut() {
             tree.mutate(0.2, 0.05);
@@ -109,10 +113,7 @@ impl Renderer {
             let mut r = physics::PhysicalRealiser::new(&mut self.world);
             for (i, mut tree) in self.population.iter_mut().enumerate() {
                 let i = i as shapes::body_tree::Coord;
-                r.next_spawn_pos = Vector3::new(i * PADDING, 5.0, 0.0);
-                if i == 1.0 {
-                    println!("{:?}", tree);
-                }
+                r.next_spawn_pos = Vector3::new(i * SPACING, 5.0, 0.0);
                 tree.realise(&mut r);
             }
         }
@@ -132,7 +133,7 @@ impl Renderer {
         self.reset_population(&path);
 
         let mut camera =
-            camera::ArcBall::new(Point3::new(30.0, 30.0, 30.0), Point3::new(0.0, 0.0, 0.0));
+            camera::ArcBall::new(Point3::new(0.0, 30.0, 50.0), Point3::new(0.0, 0.0, 0.0));
 
         self.window.set_light(light::Light::StickToCamera);
 
